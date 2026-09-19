@@ -13,17 +13,17 @@
 
 </div>
 
-《月亮露馅了》是一个面向小红书 Builder Hub 的离线 H5 互动工具。用户会在制作月饼的过程中做出选择、接住或躲开随机配料、揉月、压模和控制火候；工具把这些选择与操作行为整理成一份有证据的互动人格结果册。
+《月亮露馅了》是一个面向小红书Builder Hub的离线H5互动工具。用户会在制作月饼的过程中做出选择、接住或躲开随机配料、揉月、压模和控制火候；工具把这些选择与操作行为整理成一份有证据的互动人格结果册。
 
 它不是心理诊断，也不是答题器。结果来自一段完整的制作过程：你选了什么、怎么调整、有没有接住配料、什么时候取出月饼，都会成为结果册里的行为线索。
 
 ## ✨ 核心特性
 
 - 🥮 **完整月饼制作流程**：补月、选月皮、选主馅、调整夹心比例、接配料、揉月、压模、烘烤和切开。
-- 🎭 **16 种人格母型**：根据用户的选择与操作行为生成结果，不把随机配料直接当成性格分数。
+- 🎭 **16种人格母型**：根据用户的选择与操作行为生成结果，不把随机配料直接当成性格分数。
 - 📖 **五页结果册**：包含月饼切面、人格描述、行为证据、配方、关系侧写和可选附加页。
 - 🌙 **隐藏分岔与彩蛋**：部分选择会进入不同命运路径，满足调整次数或火候条件时会解锁附加内容。
-- 🖼️ **可分享的结果图**：生成 1080 × 1440 的竖版分享图，适合保存或发布到社交平台。
+- 🖼️ **可分享的结果图**：生成1080×1440的竖版分享图，适合保存或发布到社交平台。
 - 💾 **本地优先**：结果和进行中的步骤保存在本机，刷新后可以恢复上一轮进度。
 - ♿ **操作兜底**：拖拽、揉月、压模和切开均提供键盘操作路径，适配不同输入方式。
 
@@ -54,9 +54,9 @@
 ## 数据与安全
 
 - 会话、结果和恢复信息只保存在浏览器本地，不上传到项目服务端。
-- 项目运行时不依赖 CDN、网络请求、Worker、WASM、模块脚本或 iframe。
-- 分享图在普通浏览器中可以预览；写入相册仅在宿主提供 `window.xhs.miniTool` JSBridge 时可用。
-- 本地测试和静态预检通过，不等于 Builder Hub 上传、扫码预览、iOS / Android 真机或平台审核已经通过。
+- 项目运行时不依赖CDN、网络请求、Worker、WASM、模块脚本或iframe。
+- 分享图在普通浏览器中可以预览；写入相册仅在宿主提供`window.xhs.miniTool` JSBridge时可用。
+- 本地测试和静态预检通过，不等于Builder Hub上传、扫码预览、iOS/Android真机或平台审核已经通过。
 
 ## 项目结构
 
@@ -79,7 +79,7 @@ tests/                  # 逻辑、打包、平台契约和浏览器测试
 python -m http.server 4223 --bind 127.0.0.1
 ```
 
-在另一个终端运行 Node 和浏览器测试。浏览器测试需要 Python、Playwright 和已安装的 Chromium：
+在另一个终端运行Node和浏览器测试。浏览器测试需要Python、Playwright和已安装的Chromium：
 
 ```powershell
 node --test tests/engine.test.js tests/platform-contract.test.js tests/package.test.js tests/visuals.test.js
@@ -87,7 +87,7 @@ python tests/browser_flow_test.py
 python tests/browser_edge_test.py
 ```
 
-浏览器主流程覆盖全部制作步骤、结果册、刷新恢复及 320 / 375 / 430 px 宽度；边界流程覆盖全部躲开、隐藏页、键盘路径、损坏缓存降级、切开与结果人格一致性，以及模拟的相册 JSBridge。需要安装浏览器测试依赖时运行：
+浏览器主流程覆盖全部制作步骤、结果册、刷新恢复及320/375/430px宽度；边界流程覆盖全部躲开、隐藏页、键盘路径、损坏缓存降级、切开与结果人格一致性，以及模拟的相册JSBridge。需要安装浏览器测试依赖时运行：
 
 ```powershell
 pip install playwright
@@ -96,9 +96,9 @@ python -m playwright install chromium
 
 ## 构建小红书上传包
 
-上传的是生成的 ZIP，不是整个 Git 仓库。ZIP 根目录只包含 `index.html` 和 `assets/` 中的运行文件；测试、脚本、README 和截图不会打入上传包。
+上传的是生成的ZIP，不是整个Git仓库。ZIP根目录只包含`index.html`和`assets/`中的运行文件；测试、脚本、README和截图不会打入上传包。
 
-在 Windows PowerShell 中，从仓库根目录运行：
+在Windows PowerShell中，从仓库根目录运行：
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-upload.ps1 -OutputPath .\moon-leaks-tool-upload.zip
@@ -107,7 +107,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\preflight-upload.p
 
 ## 贡献与反馈
 
-欢迎提交 Issue 或 Pull Request。为了方便定位问题，请尽量提供：
+欢迎提交Issue或Pull Request。为了方便定位问题，请尽量提供：
 
 - 可复现的操作路径或脱敏后的缓存数据；
 - 浏览器、屏幕宽度和运行环境；
@@ -117,7 +117,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\preflight-upload.p
 
 ## 代码同步
 
-本目录是 [`Surge-Dan/moon-leaks`](https://github.com/Surge-Dan/moon-leaks) 的工作目录。后续修改完成并通过相关测试后，只提交本项目文件并推送到 `origin/main`；如果远端出现冲突或推送失败，先确认原因，不强制覆盖远端。
+本目录是[`Surge-Dan/moon-leaks`](https://github.com/Surge-Dan/moon-leaks)的工作目录。后续修改完成并通过相关测试后，只提交本项目文件并推送到`origin/main`；如果远端出现冲突或推送失败，先确认原因，不强制覆盖远端。
 
 ## 许可证
 
