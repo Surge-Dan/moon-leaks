@@ -1,0 +1,6 @@
+# Generated upload package and local test artifacts
+*.zip
+test-results/
+__pycache__/
+.pytest_cache/
+.DS_Store
