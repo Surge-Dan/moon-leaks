@@ -54,6 +54,22 @@ def main():
         assert page.get_by_text("今晚，先把月亮补圆。").is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
+        page.evaluate(
+            """
+            (() => {
+              const saved = JSON.parse(localStorage.getItem('moon-leaks-last-result'));
+              saved.result.skin = window.MoonContent.skins[0];
+              saved.snapshot.fateChoice = 'left';
+              saved.snapshot.fate = null;
+              localStorage.removeItem('moon-leaks-progress-v1');
+              localStorage.setItem('moon-leaks-last-result', JSON.stringify(saved));
+            })()
+            """
+        )
+        page.reload()
+        assert page.get_by_text("今晚，先把月亮补圆。").is_visible()
+        assert page.locator('[data-action="open-last"]').count() == 0
+        assert not errors, errors
         page.evaluate("localStorage.clear()")
         page.reload()
         page.locator('[data-action="drag-shard"]').press("Enter")

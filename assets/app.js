@@ -100,7 +100,9 @@
         !snapshot || !hasKnownId(Content.skins, snapshot.skinId) ||
         !hasKnownId(Content.fillings, snapshot.fillingId) || !hasKnownId(Content.stamps, snapshot.stampId) ||
         typeof snapshot.blendIndex !== 'number' || snapshot.blendIndex < 0 || snapshot.blendIndex >= Content.blends.length ||
-        typeof snapshot.ratio !== 'number' || typeof snapshot.bakeLevel !== 'number') {
+        typeof snapshot.ratio !== 'number' || typeof snapshot.bakeLevel !== 'number' ||
+        !((snapshot.fate === null && snapshot.fateChoice === null) ||
+          (hasValidFate(snapshot.fate) && ['left', 'right'].indexOf(snapshot.fateChoice) !== -1))) {
       return null;
     }
     return saved;

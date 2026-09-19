@@ -95,6 +95,18 @@ def main():
         assert board_box
         center_x = board_box["x"] + board_box["width"] / 2
         center_y = board_box["y"] + board_box["height"] / 2
+        canvas = page.locator("#knead-canvas")
+        alpha_before = canvas.evaluate(
+            "el => el.getContext('2d').getImageData(el.width / 2, el.height / 2, 1, 1).data[3]"
+        )
+        page.mouse.move(center_x - board_box["width"] * 0.16, center_y)
+        page.mouse.down()
+        page.mouse.move(center_x + board_box["width"] * 0.16, center_y)
+        page.mouse.up()
+        alpha_after = canvas.evaluate(
+            "el => el.getContext('2d').getImageData(el.width / 2, el.height / 2, 1, 1).data[3]"
+        )
+        assert alpha_after > alpha_before, "揉月轨迹没有绘制到 Canvas"
         radius = board_box["width"] * 0.31
         page.mouse.move(center_x + radius, center_y)
         page.mouse.down()
