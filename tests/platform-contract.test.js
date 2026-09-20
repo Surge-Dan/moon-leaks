@@ -7,6 +7,18 @@ const root = path.resolve(__dirname, '..');
 const runtimePaths = [
   'index.html',
   'assets/style.css',
+  'assets/editorial.css',
+  'assets/mooncake-whole.webp',
+  'assets/mooncake-cut-lotus.webp',
+  'assets/mooncake-cut-sesame.webp',
+  'assets/mooncake-cut-osmanthus.webp',
+  'assets/mooncake-cut-custard.webp',
+  'assets/mooncake-cut-coffee.webp',
+  'assets/filling-lotus.webp',
+  'assets/filling-sesame.webp',
+  'assets/filling-osmanthus.webp',
+  'assets/filling-custard.webp',
+  'assets/filling-coffee.webp',
   'assets/content.js',
   'assets/engine.js',
   'assets/visuals.js',
@@ -49,7 +61,7 @@ test('runtime source contains no forbidden platform capability', () => {
     /new\s+Function/i,
   ];
   const source = runtimePaths
-    .filter((relativePath) => fs.existsSync(path.join(root, relativePath)))
+    .filter((relativePath) => !relativePath.endsWith('.webp') && fs.existsSync(path.join(root, relativePath)))
     .map((relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8'))
     .join('\n');
 

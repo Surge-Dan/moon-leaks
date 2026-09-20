@@ -8,6 +8,24 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE_URL = os.environ.get("MINI_TOOL_URL", "http://127.0.0.1:4223")
 
 
+def fast_to_reveal(page):
+    page.locator('[data-action="start-intro"]').click()
+    page.locator('[data-action="pick-skin"]').first.click()
+    page.locator('[data-action="confirm-skin"]').click()
+    page.locator('[data-action="confirm-filling"]').click()
+    page.locator('[data-action="confirm-blend"]').click()
+    page.locator('[data-action="dodge-surprise"]').click()
+    page.locator('[data-action="confirm-surprise"]').click()
+    if page.locator('[data-action="choose-fate"]').count():
+        page.locator('[data-action="choose-fate"]').first.click()
+    page.locator('[data-role="knead-board"]').press("Enter")
+    page.locator('[data-action="confirm-knead"]').click()
+    page.locator('[data-action="pick-stamp"]').first.click()
+    page.locator('[data-action="press-stamp"]').press("Enter")
+    page.locator('[data-action="confirm-stamp"]').click()
+    page.locator('[data-action="take-moon"]').click()
+
+
 def main():
     errors = []
     with sync_playwright() as playwright:
@@ -51,7 +69,7 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚，先把月亮补圆。").is_visible()
+        assert page.get_by_text("今晚做一只", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
         page.evaluate(
@@ -67,12 +85,42 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚，先把月亮补圆。").is_visible()
+        assert page.get_by_text("今晚做一只", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
+        page.evaluate(
+            """
+            (() => {
+              const saved = JSON.parse(localStorage.getItem('moon-leaks-last-result'));
+              saved.snapshot.fateChoice = null;
+              saved.snapshot.fillingId = window.MoonContent.fillings[1].id;
+              saved.result.skin = window.MoonContent.skins[0];
+              saved.result.filling = window.MoonContent.fillings[1];
+              localStorage.setItem('moon-leaks-last-result', JSON.stringify(saved));
+            })()
+            """
+        )
+        page.reload()
+        assert page.locator('[data-action="open-last"]').is_visible()
+        page.evaluate(
+            """
+            (() => {
+              window.__legacyModel = null;
+              const draw = window.MoonVisuals.drawMooncake;
+              window.MoonVisuals.drawMooncake = function (canvas, model, cut, size) {
+                if (canvas && canvas.id === 'result-hero-canvas') window.__legacyModel = model;
+                return draw(canvas, model, cut, size);
+              };
+            })()
+            """
+        )
+        page.locator('[data-action="open-last"]').click()
+        page.wait_for_function("window.__legacyModel !== null")
+        assert page.evaluate("window.__legacyModel.fillingId") == "sesame"
+        assert page.evaluate("window.__legacyModel.skinId") == "snow"
         page.evaluate("localStorage.clear()")
         page.reload()
-        page.locator('[data-action="drag-shard"]').press("Enter")
+        page.locator('[data-action="start-intro"]').press("Enter")
         page.wait_for_selector('[data-action="pick-skin"]')
         page.locator('[data-action="pick-skin"]').first.click()
         page.locator('[data-action="confirm-skin"]').click()
@@ -122,6 +170,8 @@ def main():
         page.wait_for_function("window.__personalityModels.reveal !== null")
         reveal_model = page.evaluate("window.__personalityModels.reveal")
         assert any(reveal_model[key] != 50 for key in ["emotion", "boundary", "control", "intuition"])
+        assert page.locator('[data-action="cut-now"]').is_visible()
+        assert page.locator('[data-role="reveal-stage"]').evaluate("el => getComputedStyle(el).touchAction") == "none"
         page.wait_for_timeout(2200)
         page.locator('[data-role="reveal-stage"]').press("Enter")
         page.wait_for_selector(".result-name")
@@ -142,12 +192,42 @@ def main():
             page.locator('[data-action="next-result"]').click()
             visited += 1
         assert visited >= 6, "ratio-adjustment hidden page was not generated"
+
+        page.locator('[data-action="restart"]').click()
+        fast_to_reveal(page)
+        cake = page.locator("#reveal-canvas").bounding_box()
+        assert cake
+        page.mouse.move(cake["x"] + cake["width"] * .2, cake["y"] + cake["height"] / 2)
+        page.mouse.down()
+        page.evaluate(
+            "({ x, y }) => document.querySelector('[data-role=reveal-stage]').dispatchEvent(new PointerEvent('pointermove', { pointerId: 99, pointerType: 'touch', isPrimary: false, clientX: x, clientY: y, bubbles: true }))",
+            {"x": cake["x"] + cake["width"] * .85, "y": cake["y"] + cake["height"] / 2},
+        )
+        assert page.locator('.knife-track').evaluate("el => el.style.getPropertyValue('--cut')") == "0%"
+        page.mouse.move(cake["x"] + cake["width"] * .3, cake["y"] + cake["height"] / 2)
+        page.mouse.up()
+        assert page.locator('[data-role="reveal-stage"]').is_visible(), "short swipe must not cut"
+        page.locator('[data-action="cut-now"]').click()
+        page.wait_for_selector(".result-name")
+
+        while page.locator('[data-action="next-result"]').is_enabled():
+            page.locator('[data-action="next-result"]').click()
+        page.locator('[data-action="restart"]').click()
+        fast_to_reveal(page)
+        cake = page.locator("#reveal-canvas").bounding_box()
+        assert cake
+        page.mouse.move(cake["x"] + cake["width"] * .82, cake["y"] + cake["height"] / 2)
+        page.mouse.down()
+        page.mouse.move(cake["x"] + cake["width"] * .18, cake["y"] + cake["height"] / 2, steps=18)
+        page.mouse.up()
+        page.wait_for_selector(".result-name")
         assert not errors, errors
         browser.close()
 
     print("BROWSER_EDGE=PASS")
     print(f"RESULT_PAGES_WITH_HIDDEN={visited}")
     print("KEYBOARD=intro,knead,stamp,reveal")
+    print("CUT=left-to-right,right-to-left,cancel,fallback")
     print("JSBRIDGE=writeTempFile,saveImageToPhotosAlbum")
     print("CACHE_SCHEMA=PASS")
     print("REVEAL_TRAITS=FINAL")

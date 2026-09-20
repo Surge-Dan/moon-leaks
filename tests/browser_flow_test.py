@@ -9,6 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCREENSHOTS = ROOT / "test-results"
 SCREENSHOTS.mkdir(exist_ok=True)
 BASE_URL = os.environ.get("MINI_TOOL_URL", "http://127.0.0.1:4223")
+START_WIDTH = int(os.environ.get("MINI_TOOL_WIDTH", "375"))
+START_HEIGHT = int(os.environ.get("MINI_TOOL_HEIGHT", "812"))
 
 
 def drag(page, source, target_x, target_y):
@@ -29,7 +31,7 @@ def main():
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 375, "height": 812}, device_scale_factor=1)
+        page = browser.new_page(viewport={"width": START_WIDTH, "height": START_HEIGHT}, device_scale_factor=1)
         page.set_default_timeout(8000)
         page.on("console", lambda message: console_errors.append(message.text) if message.type == "error" else None)
         page.on("pageerror", lambda error: page_errors.append(str(error)))
@@ -43,34 +45,25 @@ def main():
         page.goto(BASE_URL)
         page.wait_for_load_state("networkidle")
         page.screenshot(path=str(SCREENSHOTS / "01-intro.png"), full_page=True)
-        assert page.get_by_text("今晚，先把月亮补圆。").is_visible()
-
-        moon = page.locator("#intro-moon")
-        moon_box = moon.bounding_box()
-        assert moon_box
-        drag(
-            page,
-            page.locator('[data-action="drag-shard"]'),
-            moon_box["x"] + moon_box["width"] * 0.72,
-            moon_box["y"] + moon_box["height"] * 0.42,
-        )
+        assert page.get_by_text("今晚做一只", exact=False).is_visible()
+        page.locator('[data-action="start-intro"]').click()
         page.wait_for_selector('[data-action="pick-skin"]')
         page.wait_for_timeout(520)
         page.screenshot(path=str(SCREENSHOTS / "04-skin.png"), full_page=True)
         page.reload()
         page.wait_for_selector('[data-action="pick-skin"]')
-        assert page.get_by_text("给今晚这轮月亮，选一个外壳。").is_visible()
+        assert page.get_by_text("你的月饼", exact=False).is_visible()
 
         page.locator('[data-action="pick-skin"]').nth(2).click()
         page.locator('[data-action="confirm-skin"]').click()
-        assert page.get_by_text("有些东西，总得放在最里面。").is_visible()
+        assert page.get_by_text("里面放什么").is_visible()
 
         page.locator('[data-action="next-filling"]').click()
         page.locator('[data-action="next-filling"]').click()
         page.wait_for_timeout(520)
         page.screenshot(path=str(SCREENSHOTS / "05-filling.png"), full_page=True)
         page.locator('[data-action="confirm-filling"]').click()
-        assert page.get_by_text("这一次，你想让哪一种多一点？").is_visible()
+        assert page.get_by_text("甜一点", exact=False).is_visible()
 
         page.locator('[data-action="select-blend"]').nth(2).click()
         ratio = page.locator('[data-role="ratio-range"]')
@@ -97,16 +90,16 @@ def main():
         center_y = board_box["y"] + board_box["height"] / 2
         canvas = page.locator("#knead-canvas")
         alpha_before = canvas.evaluate(
-            "el => el.getContext('2d').getImageData(el.width / 2, el.height / 2, 1, 1).data[3]"
+            "el => { const pixels = el.getContext('2d').getImageData(0, 0, el.width, el.height).data; let total = 0; for (let i = 3; i < pixels.length; i += 4) total += pixels[i]; return total; }"
         )
         page.mouse.move(center_x - board_box["width"] * 0.16, center_y)
         page.mouse.down()
         page.mouse.move(center_x + board_box["width"] * 0.16, center_y)
         page.mouse.up()
         alpha_after = canvas.evaluate(
-            "el => el.getContext('2d').getImageData(el.width / 2, el.height / 2, 1, 1).data[3]"
+            "el => { const pixels = el.getContext('2d').getImageData(0, 0, el.width, el.height).data; let total = 0; for (let i = 3; i < pixels.length; i += 4) total += pixels[i]; return total; }"
         )
-        assert alpha_after > alpha_before, "揉月轨迹没有绘制到 Canvas"
+        assert alpha_after > alpha_before, f"揉月轨迹没有绘制到Canvas：前{alpha_before}后{alpha_after}，区域{board_box}"
         radius = board_box["width"] * 0.31
         page.mouse.move(center_x + radius, center_y)
         page.mouse.down()
@@ -134,14 +127,16 @@ def main():
 
         page.wait_for_selector('[data-action="take-moon"]')
         page.wait_for_timeout(2500)
+        page.screenshot(path=str(SCREENSHOTS / "08-bake.png"), full_page=True)
         page.locator('[data-action="take-moon"]').click()
+        page.screenshot(path=str(SCREENSHOTS / "09-reveal.png"), full_page=True)
 
-        reveal = page.locator('[data-role="reveal-stage"]')
+        reveal = page.locator('#reveal-canvas')
         reveal_box = reveal.bounding_box()
         assert reveal_box
-        page.mouse.move(reveal_box["x"] + 20, reveal_box["y"] + reveal_box["height"] / 2)
+        page.mouse.move(reveal_box["x"] + reveal_box["width"] * .18, reveal_box["y"] + reveal_box["height"] / 2)
         page.mouse.down()
-        page.mouse.move(reveal_box["x"] + reveal_box["width"] - 20, reveal_box["y"] + reveal_box["height"] / 2, steps=22)
+        page.mouse.move(reveal_box["x"] + reveal_box["width"] * .82, reveal_box["y"] + reveal_box["height"] / 2, steps=22)
         page.mouse.up()
         page.wait_for_selector(".result-name")
         page.screenshot(path=str(SCREENSHOTS / "02-result.png"), full_page=True)
@@ -149,6 +144,7 @@ def main():
         page.locator('[data-action="open-share"]').click()
         page.wait_for_selector(".share-preview")
         assert page.locator(".share-preview").get_attribute("src").startswith("data:image/png;base64,")
+        page.screenshot(path=str(SCREENSHOTS / "10-share.png"), full_page=True)
         page.locator('[data-action="close-share"]').click()
         page.locator('[data-action="save-result"]').click()
 
@@ -156,6 +152,15 @@ def main():
         while page.locator('[data-action="next-result"]').is_enabled():
             page.locator('[data-action="next-result"]').click()
             visited += 1
+            if visited == 2:
+                page.wait_for_timeout(420)
+                title_box = page.locator('.anatomy .screen-title').bounding_box()
+                image_box = page.locator('#anatomy-canvas').bounding_box()
+                metrics_box = page.locator('.anatomy-metrics').bounding_box()
+                assert title_box and image_box and metrics_box
+                assert title_box['y'] + title_box['height'] <= image_box['y'] + 2
+                assert image_box['y'] + image_box['height'] <= metrics_box['y'] + 2
+                page.screenshot(path=str(SCREENSHOTS / "11-anatomy.png"), full_page=True)
         assert visited >= 5
         assert page.get_by_text("再做一轮月亮").is_visible()
 

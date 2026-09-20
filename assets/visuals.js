@@ -7,6 +7,34 @@
 })(typeof window !== 'undefined' ? window : globalThis, function (root) {
   'use strict';
 
+  var pendingDraws = new Map();
+  function redrawPending() {
+    var queued = Array.from(pendingDraws.entries());
+    pendingDraws.clear();
+    queued.forEach(function (entry) {
+      var canvas = entry[0];
+      var args = entry[1];
+      if (canvas.isConnected) drawMooncake(canvas, args.model, args.cut, args.size);
+    });
+  }
+  function localImage(source) {
+    if (typeof Image === 'undefined') return { image: null, ready: Promise.resolve() };
+    var image = new Image();
+    var ready = new Promise(function (resolve) {
+      image.onload = function () { redrawPending(); resolve(); };
+      image.onerror = function () { resolve(); };
+    });
+    image.src = source;
+    return { image: image, ready: ready };
+  }
+  var wholeAsset = localImage('./assets/mooncake-whole.webp');
+  var cutAssets = {};
+  ['lotus', 'sesame', 'osmanthus', 'custard', 'coffee'].forEach(function (id) {
+    cutAssets[id] = localImage('./assets/mooncake-cut-' + id + '.webp');
+  });
+  var cakeImage = wholeAsset.image;
+  var imagesReady = Promise.all([wholeAsset.ready].concat(Object.keys(cutAssets).map(function (id) { return cutAssets[id].ready; })));
+
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
   }
@@ -109,7 +137,7 @@
     var cy = height / 2;
     var bake = clamp((model && model.bakeLevel) || 68, 18, 100);
     var cut = clamp(cutProgress || 0, 0, 1);
-    var offset = cut * radius * 0.16;
+    var offset = cut * radius * 0.19;
     var crust = bake > 88 ? '#6c3022' : bake > 65 ? '#a95f2f' : '#c79557';
     var lightCrust = bake > 88 ? '#9a4930' : bake > 65 ? '#d28a45' : '#e0b877';
     var filling = (model && model.fillingColor) || '#c99c62';
@@ -117,8 +145,59 @@
     var blendB = (model && model.blendColors && model.blendColors[1]) || '#e0b756';
     var ratio = clamp((model && model.ratio) || 50, 10, 90) / 100;
     var geometry = getMooncakeGeometry(model, radius);
+    var hasPhoto = cakeImage && cakeImage.complete && cakeImage.naturalWidth > 0;
+    var chosenCut = cutAssets[model && model.fillingId] || cutAssets.lotus;
+    var cutImage = chosenCut.image;
+    var hasCutPhoto = cutImage && cutImage.complete && cutImage.naturalWidth > 0;
+    var skinId = model && model.skinId;
+    if ((cut >= .98 && !hasCutPhoto) || (cut < .98 && !hasPhoto)) {
+      pendingDraws.set(canvas, { model: model, cut: cutProgress, size: preferredSize });
+    } else {
+      pendingDraws.delete(canvas);
+    }
 
     ctx.clearRect(0, 0, width, height);
+    if (cut >= .98 && hasCutPhoto) {
+      ctx.save();
+      if (skinId === 'snow') ctx.filter = 'saturate(.36) brightness(1.15)';
+      else if (skinId === 'tea') ctx.filter = 'sepia(.18) hue-rotate(29deg) saturate(.78)';
+      else if (skinId === 'charcoal') ctx.filter = 'grayscale(.75) brightness(.68)';
+      var imageX = cx - radius * 1.3;
+      var imageY = cy - radius * 1.28;
+      var imageSize = radius * 2.6;
+      ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
+      ctx.restore();
+      if (skinId && skinId !== 'amber') {
+        var faces = [
+          [[443,259],[471,278],[474,357],[392,460],[296,568],[252,590],[252,515],[305,418],[375,311]],
+          [[520,275],[554,303],[618,375],[676,476],[702,681],[665,680],[602,578],[534,490],[504,413],[503,329]],
+        ];
+        ctx.save();
+        ctx.beginPath();
+        faces.forEach(function (points) {
+          points.forEach(function (point, index) {
+            var x = imageX + point[0] / 900 * imageSize;
+            var y = imageY + point[1] / 900 * imageSize;
+            if (index === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          ctx.closePath();
+        });
+        ctx.clip();
+        ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
+        ctx.restore();
+      }
+      return;
+    }
+    function drawPhoto(originX) {
+      ctx.save();
+      if (skinId === 'snow') ctx.filter = 'saturate(.38) brightness(1.16)';
+      else if (skinId === 'tea') ctx.filter = 'sepia(.2) hue-rotate(30deg) saturate(.75)';
+      else if (skinId === 'charcoal') ctx.filter = 'grayscale(.8) brightness(.64)';
+      else ctx.filter = 'saturate(' + (0.83 + bake / 170).toFixed(2) + ') brightness(' + (1.12 - bake / 600).toFixed(2) + ')';
+      ctx.drawImage(cakeImage, originX - radius * 1.3, cy - radius * 1.32, radius * 2.6, radius * 2.6);
+      ctx.restore();
+    }
     var shell = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.38, radius * 0.06, cx, cy, radius);
     shell.addColorStop(0, lightCrust);
     shell.addColorStop(0.74, crust);
@@ -163,6 +242,16 @@
 
     function drawHalf(side) {
       var originX = cx + side * offset;
+      if (hasPhoto) {
+        ctx.save();
+        ctx.beginPath();
+        if (side < 0) ctx.rect(originX - radius * 1.35, cy - radius * 1.35, radius * 1.35, radius * 2.7);
+        else ctx.rect(originX, cy - radius * 1.35, radius * 1.35, radius * 2.7);
+        ctx.clip();
+        drawPhoto(originX);
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.beginPath();
       if (side < 0) ctx.arc(originX, cy, radius, Math.PI / 2, Math.PI * 1.5);
@@ -178,6 +267,10 @@
     }
 
     if (cut <= 0.02) {
+      if (hasPhoto) {
+        drawPhoto(cx);
+        return;
+      }
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fillStyle = shell;
@@ -192,35 +285,48 @@
     drawHalf(-1);
     drawHalf(1);
 
-    var faceWidth = Math.max(2, radius * 0.15 * cut);
+    var faceWidth = Math.max(2, radius * 0.17 * cut);
+    var faceCy = cy + radius * 0.27;
+    var faceHeight = Math.min(radius * 0.56, geometry.innerHeight * 0.84);
     [-1, 1].forEach(function (side) {
       var faceX = cx + side * offset;
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(faceX, cy, faceWidth, geometry.innerHeight + geometry.shellThickness, 0, 0, Math.PI * 2);
-      ctx.fillStyle = lightCrust;
+      ctx.ellipse(faceX, faceCy, faceWidth, faceHeight + geometry.shellThickness * 0.17, 0, 0, Math.PI * 2);
+      var cutCrust = ctx.createLinearGradient(faceX - faceWidth, faceCy, faceX + faceWidth, faceCy);
+      cutCrust.addColorStop(0, lightCrust);
+      cutCrust.addColorStop(.5, '#f2d6a2');
+      cutCrust.addColorStop(1, crust);
+      ctx.fillStyle = cutCrust;
       ctx.fill();
       ctx.beginPath();
-      var innerWidth = Math.max(1, faceWidth - geometry.shellThickness * 0.1);
-      ctx.ellipse(faceX, cy, innerWidth, geometry.innerHeight, 0, 0, Math.PI * 2);
-      ctx.fillStyle = filling;
+      var innerWidth = Math.max(1, faceWidth - geometry.shellThickness * 0.16);
+      var innerHeight = faceHeight - geometry.shellThickness * 0.13;
+      ctx.ellipse(faceX, faceCy, innerWidth, innerHeight, 0, 0, Math.PI * 2);
+      var fillingGradient = ctx.createLinearGradient(faceX - innerWidth, faceCy, faceX + innerWidth, faceCy);
+      fillingGradient.addColorStop(0, '#f0d8ac');
+      fillingGradient.addColorStop(.35, filling);
+      fillingGradient.addColorStop(1, '#8e6640');
+      ctx.fillStyle = fillingGradient;
       ctx.fill();
       ctx.clip();
-      var topEnd = cy - geometry.innerHeight + geometry.innerHeight * 2 * ratio + geometry.layerOffset;
+      var topEnd = faceCy - innerHeight + innerHeight * 2 * ratio + geometry.layerOffset * 0.42;
+      ctx.globalAlpha = .32;
       ctx.fillStyle = blendA;
-      ctx.fillRect(faceX - faceWidth, cy - geometry.innerHeight, faceWidth * 2, Math.max(0, topEnd - (cy - geometry.innerHeight)));
+      ctx.fillRect(faceX - faceWidth, faceCy - innerHeight, faceWidth * 2, Math.max(0, topEnd - (faceCy - innerHeight)));
       ctx.fillStyle = blendB;
-      ctx.fillRect(faceX - faceWidth, topEnd, faceWidth * 2, Math.max(0, cy + geometry.innerHeight - topEnd));
-      for (var grain = 0; grain < 13; grain += 1) {
+      ctx.fillRect(faceX - faceWidth, topEnd, faceWidth * 2, Math.max(0, faceCy + innerHeight - topEnd));
+      ctx.globalAlpha = 1;
+      for (var grain = 0; grain < 32; grain += 1) {
         ctx.beginPath();
-        ctx.arc(faceX + (seeded(grain, side + 37) - .5) * faceWidth, cy + (seeded(grain, side + 41) - .5) * radius * 1.18, .6 + seeded(grain, 43), 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(58,28,21,.25)';
+        ctx.arc(faceX + (seeded(grain, side + 37) - .5) * faceWidth * 1.8, faceCy + (seeded(grain, side + 41) - .5) * innerHeight * 1.8, .4 + seeded(grain, 43) * .8, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(79,48,23,.22)';
         ctx.fill();
       }
       ctx.restore();
       ctx.beginPath();
-      ctx.ellipse(faceX, cy, faceWidth, geometry.innerHeight + geometry.shellThickness, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(74,34,23,.5)';
+      ctx.ellipse(faceX, faceCy, faceWidth, faceHeight + geometry.shellThickness * 0.17, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(103,60,26,.37)';
       ctx.lineWidth = 1;
       ctx.stroke();
     });
@@ -248,35 +354,43 @@
     var ctx = canvas.getContext('2d');
     canvas.width = 1080;
     canvas.height = 1440;
-    ctx.fillStyle = '#17140f';
+    ctx.fillStyle = '#f7f4ed';
     ctx.fillRect(0, 0, 1080, 1440);
-    var glow = ctx.createRadialGradient(540, 500, 30, 540, 500, 430);
-    glow.addColorStop(0, 'rgba(217,185,119,.26)');
-    glow.addColorStop(1, 'rgba(217,185,119,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(80, 40, 920, 920);
+    ctx.fillStyle = '#fff9ee';
+    ctx.fillRect(55, 55, 970, 1330);
+    ctx.fillStyle = '#e85c35';
+    ctx.fillRect(55, 55, 970, 13);
+    ctx.fillStyle = '#29251f';
+    ctx.font = '800 37px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('月亮露馅了', 115, 150);
+    ctx.fillStyle = '#e85c35';
+    ctx.fillRect(115, 184, 124, 6);
+    ctx.fillStyle = '#805d44';
+    ctx.font = '700 25px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('第' + result.number + '轮月饼', 115, 247);
+    ctx.fillStyle = '#f6e2c4';
+    ctx.beginPath();
+    ctx.arc(540, 600, 375, 0, Math.PI * 2);
+    ctx.fill();
 
     var moonCanvas = document.createElement('canvas');
-    drawMooncake(moonCanvas, model || {}, 1, 600);
-    ctx.drawImage(moonCanvas, 240, 160, 600, 600);
+    drawMooncake(moonCanvas, model || {}, 1, 660);
+    ctx.drawImage(moonCanvas, 210, 274, 660, 660);
 
-    ctx.fillStyle = '#d9b977';
-    ctx.font = '28px ui-monospace, monospace';
-    ctx.fillText('MOON ARCHIVE / ' + result.number, 92, 848);
-    ctx.fillStyle = '#f1e8d4';
-    ctx.font = '700 62px STSong, SimSun, serif';
-    wrapText(ctx, result.name, 92, 950, 896, 78, 2);
-    ctx.fillStyle = '#bdb09b';
-    ctx.font = '34px -apple-system, BlinkMacSystemFont, sans-serif';
-    wrapText(ctx, result.line, 92, 1132, 860, 52, 3);
-    ctx.strokeStyle = 'rgba(217,185,119,.45)';
+    ctx.fillStyle = '#29251f';
+    ctx.font = '900 63px "PingFang SC", "Microsoft YaHei", sans-serif';
+    wrapText(ctx, result.name, 115, 1045, 850, 82, 2);
+    ctx.fillStyle = '#6b5c4b';
+    ctx.font = '30px "PingFang SC", "Microsoft YaHei", sans-serif';
+    wrapText(ctx, result.line, 115, 1170, 850, 48, 3);
+    ctx.strokeStyle = '#dfd2bf';
     ctx.beginPath();
-    ctx.moveTo(92, 1280);
-    ctx.lineTo(988, 1280);
+    ctx.moveTo(115, 1264);
+    ctx.lineTo(965, 1264);
     ctx.stroke();
-    ctx.fillStyle = '#897c69';
-    ctx.font = '24px ui-monospace, monospace';
-    ctx.fillText('月亮露馅了 · 外面都可以很圆，里面各有各的馅', 92, 1340);
+    ctx.fillStyle = '#8b7d6c';
+    ctx.font = '25px "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('你亲手做的月饼，藏着你自己的配方', 115, 1324);
     return canvas;
   }
 
@@ -286,5 +400,6 @@
     drawShareCard: drawShareCard,
     fitCanvas: fitCanvas,
     getMooncakeGeometry: getMooncakeGeometry,
+    ready: function () { return imagesReady; },
   };
 });
