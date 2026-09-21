@@ -69,7 +69,7 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚做一只", exact=False).is_visible()
+        assert page.get_by_text("今晚，做一只月饼", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
         page.evaluate(
@@ -85,7 +85,7 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚做一只", exact=False).is_visible()
+        assert page.get_by_text("今晚，做一只月饼", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
         page.evaluate(
@@ -123,6 +123,10 @@ def main():
         page.locator('[data-action="start-intro"]').press("Enter")
         page.wait_for_selector('[data-action="pick-skin"]')
         page.locator('[data-action="pick-skin"]').first.click()
+        page.locator('[data-action="back-step"]').click()
+        assert page.locator('[data-action="start-intro"]').is_visible()
+        page.locator('[data-action="start-intro"]').click()
+        assert page.locator('[data-action="pick-skin"]').first.get_attribute("aria-pressed") == "true"
         page.locator('[data-action="confirm-skin"]').click()
         page.locator('[data-action="confirm-filling"]').click()
 

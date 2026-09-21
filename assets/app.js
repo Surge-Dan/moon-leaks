@@ -162,8 +162,15 @@
     return items.find(function (item) { return item.id === id; });
   }
 
-  function stepMeta(label, progress) {
-    return '<div class="topline"><span class="brand-mark">月亮<span>露馅了</span></span><span class="step-label">' + escapeHtml(label) + '</span></div>' +
+  function previousStep() {
+    if (state.step === 'knead') return state.fate ? 'fate' : 'surprise';
+    var index = STEPS.indexOf(state.step);
+    return index > 0 && STEPS[index - 1] !== 'result' ? STEPS[index - 1] : null;
+  }
+
+  function stepMeta(label, progress, allowBack) {
+    var back = allowBack === false ? '' : '<button class="back-action" data-action="back-step" aria-label="返回上一步">‹</button>';
+    return '<div class="topline">' + back + '<span class="brand-mark">月下案台</span><span class="step-label">' + escapeHtml(label) + '</span><span class="topline-mark" aria-hidden="true">◌</span></div>' +
       '<div class="progress-line" role="progressbar" aria-label="制作进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progress + '"><span style="--progress:' + progress + '%"></span></div>';
   }
 
@@ -210,11 +217,11 @@
 
   function renderIntro() {
     return '<section class="screen intro-screen">' +
-      stepMeta('开始', 0) +
-      '<div class="screen-copy"><p class="eyebrow">一份很私人的中秋配方</p><h1 class="screen-title">今晚做一只<br>你的月饼</h1><p class="screen-note">挑口味、揉面、看切面。你的选择会留在馅里。</p></div>' +
-      '<div class="stage moon-stage"><span class="hero-caption">01 / 从一块饼皮开始</span><img class="hero-cake" src="./assets/mooncake-whole.webp" alt="花纹清晰的烤月饼"><span class="hero-sticker">亲手做的<br>才会露馅</span></div>' +
-      '<button class="primary-action intro-action" data-action="start-intro">开始制作 <span aria-hidden="true">↗</span></button>' +
-      (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮月亮</button>' : '') +
+      stepMeta('月下案台', 0, false) +
+      '<div class="atelier-intro"><div class="atelier-photo"><img src="./assets/atelier-hero.webp" alt="月光下的中秋烘焙案台"><span class="atelier-seal">月<br>下<br>案</span><span class="atelier-caption">中秋夜 / 一只月饼的开始</span></div>' +
+      '<div class="atelier-copy"><p class="eyebrow">月下案台</p><h1 class="screen-title">今晚，做一只月饼</h1><p class="screen-note">选一层饼皮，放进喜欢的馅。剩下的，交给你的手。</p></div></div>' +
+      '<div class="atelier-actions"><button class="primary-action intro-action" data-action="start-intro">开始做一只 <span aria-hidden="true">↗</span></button>' +
+      (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮</button>' : '') + '</div>' +
       '</section>';
   }
 
@@ -222,11 +229,11 @@
     var cards = Content.skins.map(function (skin, index) {
       var selected = skin.id === state.skinId ? ' is-selected' : '';
       return '<button class="specimen' + selected + '" data-action="pick-skin" data-id="' + skin.id + '" aria-pressed="' + (selected ? 'true' : 'false') + '">' +
-        '<span class="specimen-swatch" style="--color:' + skin.color + ';--accent:' + skin.accent + '"></span>' +
+        '<span class="specimen-swatch skin-swatch skin-' + skin.id + '" style="--color:' + skin.color + ';--accent:' + skin.accent + '"></span>' +
         '<span class="specimen-index">0' + (index + 1) + '</span><h3>' + skin.name + '</h3><p>' + skin.note + '</p></button>';
     }).join('');
     return '<section class="screen">' + stepMeta('01 / 选饼皮', 13) +
-      '<div class="screen-copy"><p class="eyebrow">先选外面这一层</p><h1 class="screen-title">你的月饼<br>穿什么外套</h1><p class="screen-note">选四种饼皮中的一种</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">先选外面这一层</p><h1 class="screen-title">要不先挑一层饼皮？</h1><p class="screen-note">轻点看纹理，长按看看它的手感</p></div>' +
       '<div class="stage"><div class="specimen-grid">' + cards + '</div></div>' +
       '<button class="primary-action" data-action="confirm-skin" ' + (state.skinId ? '' : 'disabled') + '>选好了，放主馅</button>' +
       '</section>';
@@ -238,7 +245,7 @@
       return '<span class="' + (index === state.fillingIndex ? 'is-active' : '') + '"></span>';
     }).join('');
     return '<section class="screen">' + stepMeta('02 / 放主馅', 25) +
-      '<div class="screen-copy"><p class="eyebrow">把喜欢的藏进去</p><h1 class="screen-title">里面放什么</h1><p class="screen-note">点左右箭头换口味</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title">原来你喜欢' + filling.name + '呢～</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
       '<div class="stage"><div class="booklet" data-role="filling-booklet"><button class="booklet-arrow" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
       '<article class="ingredient-leaf"><span class="specimen-index">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" src="./assets/filling-' + filling.id + '.webp" alt=""><h3>' + filling.name + '</h3><p>' + filling.note + '</p><div class="page-dots">' + dots + '</div></article>' +
       '<button class="booklet-arrow" data-action="next-filling" aria-label="下一个主馅">→</button></div></div>' +
@@ -252,9 +259,9 @@
       return '<button class="blend-tab ' + (index === state.blendIndex ? 'is-selected' : '') + '" data-action="select-blend" data-index="' + index + '">' + item.left + ' × ' + item.right + '</button>';
     }).join('');
     return '<section class="screen">' + stepMeta('03 / 调夹心', 38) +
-      '<div class="screen-copy"><p class="eyebrow">两种味道配在一起</p><h1 class="screen-title">甜一点<br>还是特别一点</h1><p class="screen-note">换搭配，再拖动圆饼调整比例</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">两种味道配在一起</p><h1 class="screen-title">这一口，想偏向哪边？</h1><p class="screen-note">拖动月饼剖面里的分界线，调到你觉得刚刚好</p></div>' +
       '<div class="stage"><div class="blend-layout"><div class="blend-tabs">' + tabs + '</div>' +
-      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '">' +
+      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '"><img class="blend-photo" src="./assets/mooncake-cut-' + (state.fillingId || 'lotus') + '.webp" alt="月饼剖面参考图">' +
       '<span class="blend-half left"></span><span class="blend-half right"></span><span class="blend-seam"></span></div>' +
       '<div class="ratio-readout"><span data-role="ratio-left">' + state.ratio + '</span> : <span data-role="ratio-right">' + (100 - state.ratio) + '</span></div>' +
       '<input class="ratio-range" data-role="ratio-range" aria-label="夹心比例" type="range" min="10" max="90" value="' + state.ratio + '"></div></div>' +
@@ -283,8 +290,8 @@
         '<span class="falling-label"><strong>' + item.name + '</strong><small>' + item.form + '</small></span></button>';
     }).join('');
     var settled = Boolean(state.surpriseOutcome);
-    return '<section class="screen">' + stepMeta('04 / 加点意外', 50) +
-      '<div class="screen-copy"><p class="eyebrow">临时加料</p><h1 class="screen-title">掉下来三样东西</h1><p class="screen-note">接住一个，或全部躲开</p></div>' +
+    return '<section class="screen atelier-step">' + stepMeta('04 / 加点意外', 50) +
+      '<div class="screen-copy"><p class="eyebrow">案台边有点动静</p><h1 class="screen-title">有三样东西掉下来了</h1><p class="screen-note">接住一个，或让它们落在桌边</p></div>' +
       '<div class="stage surprise-stage">' + choices + '</div>' +
       (settled ? '<button class="primary-action" data-action="confirm-surprise">继续做月饼</button>' : '<button class="quiet-action" data-action="dodge-surprise">都不要</button>') +
       '</section>';
@@ -293,7 +300,7 @@
   function renderFate() {
     var fate = state.fate;
     return '<section class="screen">' + stepMeta('加料 / 二选一', 56) +
-      '<div class="screen-copy"><p class="eyebrow">还有一道临时选择</p><h1 class="screen-title">如果只能留一个</h1><p class="screen-note">选你现在更想要的</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">案台上只留一件</p><h1 class="screen-title">如果只能留一个，你会选哪样？</h1><p class="screen-note">不用解释，凭第一反应就好</p></div>' +
       '<div class="stage"><div class="fate-stage"><button class="fate-choice" data-action="choose-fate" data-side="left">' + fate.left.label + '</button>' +
       '<button class="fate-choice" data-action="choose-fate" data-side="right">' + fate.right.label + '</button></div></div>' +
       '</section>';
@@ -301,7 +308,7 @@
 
   function renderKnead() {
     return '<section class="screen">' + stepMeta('05 / 揉面团', 63) +
-      '<div class="screen-copy"><p class="eyebrow">手感最重要的一步</p><h1 class="screen-title">在面团上画几圈</h1><p class="screen-note">沿着圆圈揉，进度满了就能继续</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">把散开的东西揉到一起</p><h1 class="screen-title">要不要再揉两圈？</h1><p class="screen-note">在案台上的面团上画圈，手感会告诉你什么时候刚好</p></div>' +
       '<div class="stage"><div class="knead-board" data-role="knead-board" role="button" tabindex="0" aria-label="画圈揉月，按回车也可完成"><canvas id="knead-canvas" class="knead-canvas"></canvas></div></div>' +
       '<div class="knead-meter" style="--meter:' + Math.round(state.kneadProgress * 100) + '%"><span></span></div>' +
       '<button class="primary-action" data-action="confirm-knead" ' + (state.kneadProgress >= 0.66 ? '' : 'disabled') + '>面团揉好了</button></section>';
@@ -315,7 +322,7 @@
     var current = pickById(Content.stamps, state.stampId) || Content.stamps[0];
     var depth = clamp(state.stampHoldMs / 1600, 0, 1);
     return '<section class="screen">' + stepMeta('06 / 压花纹', 75) +
-      '<div class="screen-copy"><p class="eyebrow">最后一点私心</p><h1 class="screen-title">选一句，压进饼里</h1><p class="screen-note">先选文字，再长按月饼约一秒</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">轮到模具留下记号</p><h1 class="screen-title">挑一个花纹，压进去</h1><p class="screen-note">选好后按住模具，等花纹慢慢显出来</p></div>' +
       '<div class="stage" style="flex-direction:column"><div class="stamp-list">' + choices + '</div>' +
       '<button class="press-pad" data-action="press-stamp" aria-label="长按压模"><span class="press-mark" style="--mark-opacity:' + (0.18 + depth * 0.62).toFixed(2) + '">' + current.mark + '</span></button></div>' +
       '<div class="press-meter" style="--meter:' + Math.round(depth * 100) + '%"><span></span></div>' +
@@ -331,16 +338,16 @@
   }
 
   function renderBake() {
-    return '<section class="screen">' + stepMeta('07 / 烘烤', 88) +
-      '<div class="screen-copy"><p class="eyebrow">烤箱正在升温</p><h1 class="screen-title">烤到你喜欢的颜色</h1><p class="screen-note">颜色会慢慢变深，想好了就取出</p></div>' +
-      '<div class="stage oven-stage"><span class="oven-halo"></span><canvas id="bake-canvas" class="mooncake-canvas"></canvas><p class="bake-label" data-role="bake-label">' + bakeLabel(state.bakeLevel) + '</p></div>' +
+    return '<section class="screen night-step">' + stepMeta('07 / 烘烤', 88) +
+      '<div class="screen-copy"><p class="eyebrow">夜里的烤箱</p><h1 class="screen-title">烤到你喜欢的颜色</h1><p class="screen-note">月光在窗外，火候在你手里</p></div>' +
+      '<div class="stage oven-stage"><img class="moon-phase-strip" src="./assets/moon-phases.webp" alt="月相变化"><span class="oven-halo"></span><canvas id="bake-canvas" class="mooncake-canvas"></canvas><p class="bake-label" data-role="bake-label">' + bakeLabel(state.bakeLevel) + '</p></div>' +
       '<div class="bake-meter" style="--meter:' + state.bakeLevel + '%"><span></span></div>' +
       '<button class="primary-action" data-action="take-moon">现在出炉</button></section>';
   }
 
   function renderReveal() {
-    return '<section class="screen">' + stepMeta('最后 / 切开', 96) +
-      '<div class="screen-copy"><p class="eyebrow">到了看切面的时候</p><h1 class="screen-title">这一刀，交给你</h1><p class="screen-note">按住月饼，沿虚线横向划过</p></div>' +
+    return '<section class="screen night-step">' + stepMeta('最后 / 切开', 96) +
+      '<div class="screen-copy"><p class="eyebrow">月光照到案板上</p><h1 class="screen-title">这一刀，交给你</h1><p class="screen-note">沿着月弧横向划过，看看里面藏了什么</p></div>' +
       '<div class="stage reveal-stage" data-role="reveal-stage" role="button" aria-label="横向划开月饼"><canvas id="reveal-canvas" class="mooncake-canvas"></canvas>' +
       '<div class="knife-track" aria-hidden="true" style="--cut:' + Math.round(state.cutProgress * 100) + '%"><span class="knife-track-line"></span><span class="knife-handle">✦</span></div>' +
       '<div class="cut-guide">沿着这条线划过去</div></div>' +
@@ -1016,6 +1023,15 @@
     render();
   }
 
+  function backStep() {
+    var destination = previousStep();
+    if (!destination) return;
+    if (state.step === 'fate') state.fateChoice = null;
+    if (state.step === 'reveal') state.cutProgress = 0;
+    goStep(destination);
+    showToast('回到上一步，刚才的选择还在。');
+  }
+
   app.addEventListener('click', function (event) {
     var control = event.target.closest('[data-action]');
     if (!control || control.disabled) return;
@@ -1042,6 +1058,7 @@
       'open-share': openShare,
       'open-last': openLastResult,
       'restart': restart,
+      'back-step': backStep,
     };
     if (handlers[action]) handlers[action]();
   });
