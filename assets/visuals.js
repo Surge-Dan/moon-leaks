@@ -72,6 +72,87 @@
     };
   }
 
+  function drawStampPattern(ctx, cx, cy, radius, stampId, alpha) {
+    var r = radius * .47;
+    var id = stampId || 'full-moon';
+    ctx.save();
+    ctx.globalAlpha = alpha == null ? .42 : alpha;
+    ctx.strokeStyle = 'rgba(73,34,20,.84)';
+    ctx.fillStyle = 'rgba(73,34,20,.64)';
+    ctx.lineWidth = Math.max(1, radius * .018);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * .72, 0, Math.PI * 2);
+    ctx.stroke();
+    function petal(angle, distance, size) {
+      var px = cx + Math.cos(angle) * distance;
+      var py = cy + Math.sin(angle) * distance;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(angle + Math.PI / 2);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * .46, size, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (id === 'osmanthus') {
+      for (var flower = 0; flower < 5; flower += 1) {
+        var flowerAngle = flower * Math.PI * 2 / 5 - Math.PI / 2;
+        var fx = cx + Math.cos(flowerAngle) * r * .42;
+        var fy = cy + Math.sin(flowerAngle) * r * .42;
+        for (var leaf = 0; leaf < 5; leaf += 1) petal(flowerAngle + leaf * Math.PI * 2 / 5, r * .42, r * .115);
+        ctx.beginPath(); ctx.arc(fx, fy, r * .045, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (id === 'cloud' || id === 'ruyi') {
+      for (var cloud = 0; cloud < 4; cloud += 1) {
+        var cloudAngle = cloud * Math.PI / 2;
+        ctx.save();
+        ctx.translate(cx + Math.cos(cloudAngle) * r * .33, cy + Math.sin(cloudAngle) * r * .33);
+        ctx.rotate(cloudAngle);
+        ctx.beginPath();
+        ctx.arc(-r * .12, 0, r * .1, Math.PI * .15, Math.PI * 1.85);
+        ctx.arc(0, -r * .06, r * .13, Math.PI * .1, Math.PI * 1.8);
+        ctx.arc(r * .13, 0, r * .09, Math.PI * 1.15, Math.PI * 1.9);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (id === 'ruyi') { ctx.beginPath(); ctx.arc(cx, cy, r * .18, 0, Math.PI * 2); ctx.stroke(); }
+    } else if (id === 'rabbit') {
+      ctx.beginPath(); ctx.ellipse(cx, cy + r * .08, r * .19, r * .25, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx - r * .09, cy - r * .2, r * .06, r * .18, -.25, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx + r * .09, cy - r * .2, r * .06, r * .18, .25, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx + r * .19, cy + r * .18, r * .08, 0, Math.PI * 2); ctx.stroke();
+    } else if (id === 'window') {
+      ctx.beginPath(); ctx.moveTo(cx - r * .52, cy); ctx.lineTo(cx + r * .52, cy); ctx.moveTo(cx, cy - r * .52); ctx.lineTo(cx, cy + r * .52); ctx.stroke();
+      for (var diagonal = -1; diagonal <= 1; diagonal += 2) {
+        ctx.beginPath(); ctx.moveTo(cx - r * .48, cy + diagonal * r * .32); ctx.lineTo(cx + r * .48, cy - diagonal * r * .32); ctx.stroke();
+      }
+    } else if (id === 'harvest') {
+      for (var grainSide = -1; grainSide <= 1; grainSide += 2) {
+        ctx.beginPath(); ctx.moveTo(cx + grainSide * r * .1, cy + r * .48); ctx.quadraticCurveTo(cx + grainSide * r * .32, cy, cx + grainSide * r * .14, cy - r * .48); ctx.stroke();
+        for (var grain = 0; grain < 4; grain += 1) {
+          var gy = cy + r * .28 - grain * r * .18;
+          ctx.beginPath(); ctx.ellipse(cx + grainSide * (r * .18 + grain * r * .035), gy, r * .045, r * .085, grainSide * .8, 0, Math.PI * 2); ctx.stroke();
+        }
+      }
+    } else if (id === 'fish') {
+      [-1, 1].forEach(function (side) {
+        ctx.save(); ctx.translate(cx + side * r * .2, cy); ctx.scale(side, 1);
+        ctx.beginPath(); ctx.ellipse(0, 0, r * .18, r * .11, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-r * .18, 0); ctx.lineTo(-r * .32, -r * .12); ctx.lineTo(-r * .32, r * .12); ctx.closePath(); ctx.stroke();
+        ctx.restore();
+      });
+    } else {
+      for (var i = 0; i < 8; i += 1) petal(i * Math.PI * 2 / 8, r * .31, r * .17);
+      ctx.beginPath(); ctx.arc(cx, cy, r * .1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function drawMoon(canvas, fullness) {
     var fitted = fitCanvas(canvas);
     var ctx = fitted.context;
@@ -162,6 +243,8 @@
       if (skinId === 'snow') ctx.filter = 'saturate(.36) brightness(1.15)';
       else if (skinId === 'tea') ctx.filter = 'sepia(.18) hue-rotate(29deg) saturate(.78)';
       else if (skinId === 'charcoal') ctx.filter = 'grayscale(.75) brightness(.68)';
+      else if (skinId === 'osmanthus') ctx.filter = 'sepia(.34) saturate(1.1) brightness(1.06)';
+      else if (skinId === 'purple') ctx.filter = 'sepia(.22) hue-rotate(238deg) saturate(.72) brightness(.84)';
       var imageX = cx - radius * 1.3;
       var imageY = cy - radius * 1.28;
       var imageSize = radius * 2.6;
@@ -187,6 +270,8 @@
         ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
         ctx.restore();
       }
+      drawStampPattern(ctx, cx - radius * .35, cy - radius * .08, radius * .5, model && model.stampId, .38);
+      drawStampPattern(ctx, cx + radius * .35, cy - radius * .08, radius * .5, model && model.stampId, .38);
       return;
     }
     function drawPhoto(originX) {
@@ -194,6 +279,8 @@
       if (skinId === 'snow') ctx.filter = 'saturate(.38) brightness(1.16)';
       else if (skinId === 'tea') ctx.filter = 'sepia(.2) hue-rotate(30deg) saturate(.75)';
       else if (skinId === 'charcoal') ctx.filter = 'grayscale(.8) brightness(.64)';
+      else if (skinId === 'osmanthus') ctx.filter = 'sepia(.35) saturate(1.12) brightness(1.04)';
+      else if (skinId === 'purple') ctx.filter = 'sepia(.22) hue-rotate(238deg) saturate(.74) brightness(.84)';
       else ctx.filter = 'saturate(' + (0.83 + bake / 170).toFixed(2) + ') brightness(' + (1.12 - bake / 600).toFixed(2) + ')';
       ctx.drawImage(cakeImage, originX - radius * 1.3, cy - radius * 1.32, radius * 2.6, radius * 2.6);
       ctx.restore();
@@ -269,6 +356,7 @@
     if (cut <= 0.02) {
       if (hasPhoto) {
         drawPhoto(cx);
+        drawStampPattern(ctx, cx, cy - radius * .03, radius, model && model.stampId, .38);
         return;
       }
       ctx.beginPath();
@@ -279,6 +367,7 @@
       ctx.shadowOffsetY = 8;
       ctx.fill();
       drawPattern(cx, 'full');
+      drawStampPattern(ctx, cx, cy - radius * .03, radius, model && model.stampId, .52);
       return;
     }
 

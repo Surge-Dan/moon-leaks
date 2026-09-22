@@ -107,6 +107,16 @@
     }
     result.model.skinId = snapshot.skinId;
     result.model.fillingId = snapshot.fillingId;
+    result.model.stampId = snapshot.stampId;
+    if (!Array.isArray(result.notes)) {
+      result.notes = [
+        '外层选了' + result.skin.name + '，这一口先从喜欢的触感开始。',
+        '主馅放了' + result.filling.name + '，夹心留在你当时定下的比例。',
+        result.surprise ? '案边的小料里，你留下了' + result.surprise.name + '。' : '案边的小料，今晚一味也没加。',
+        '月纹选的是' + result.stamp.label + '。',
+        '这一轮的月饼，已经按当时的配方留好了。',
+      ];
+    }
     return saved;
   }
 
@@ -170,7 +180,7 @@
 
   function stepMeta(label, progress, allowBack) {
     var back = allowBack === false ? '' : '<button class="back-action" data-action="back-step" aria-label="返回上一步">‹</button>';
-    return '<div class="topline">' + back + '<span class="brand-mark">月下案台</span><span class="step-label">' + escapeHtml(label) + '</span><span class="topline-mark" aria-hidden="true">◌</span></div>' +
+    return '<div class="topline">' + back + '<span class="brand-mark">月亮露馅了</span><span class="step-label">' + escapeHtml(label) + '</span><span class="topline-mark" aria-hidden="true">◌</span></div>' +
       '<div class="progress-line" role="progressbar" aria-label="制作进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progress + '"><span style="--progress:' + progress + '%"></span></div>';
   }
 
@@ -217,9 +227,9 @@
 
   function renderIntro() {
     return '<section class="screen intro-screen">' +
-      stepMeta('月下案台', 0, false) +
-      '<div class="atelier-intro"><div class="atelier-photo"><img src="./assets/atelier-hero.webp" alt="月光下的中秋烘焙案台"><span class="atelier-seal">月<br>下<br>案</span><span class="atelier-caption">中秋夜 / 一只月饼的开始</span></div>' +
-      '<div class="atelier-copy"><p class="eyebrow">月下案台</p><h1 class="screen-title">今晚，做一只月饼</h1><p class="screen-note">选一层饼皮，放进喜欢的馅。剩下的，交给你的手。</p></div></div>' +
+      stepMeta('中秋夜', 0, false) +
+      '<div class="atelier-intro"><div class="atelier-photo"><img src="./assets/atelier-hero.webp" alt="月光下的中秋烘焙案台"><span class="atelier-seal">月<br>下<br>案</span><span class="atelier-caption">桂影入窗，案上有香</span></div>' +
+      '<div class="atelier-copy"><h1 class="screen-title">今晚，做一只月饼</h1><p class="screen-note">挑一层饼皮，放一味喜欢的馅。要不，现在开工？</p></div></div>' +
       '<div class="atelier-actions"><button class="primary-action intro-action" data-action="start-intro">开始做一只 <span aria-hidden="true">↗</span></button>' +
       (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮</button>' : '') + '</div>' +
       '</section>';
@@ -245,11 +255,11 @@
       return '<span class="' + (index === state.fillingIndex ? 'is-active' : '') + '"></span>';
     }).join('');
     return '<section class="screen">' + stepMeta('02 / 放主馅', 25) +
-      '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title">原来你喜欢' + filling.name + '呢～</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title" data-role="filling-title">原来你喜欢' + filling.name + '呢</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
       '<div class="stage"><div class="booklet" data-role="filling-booklet"><button class="booklet-arrow" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
-      '<article class="ingredient-leaf"><span class="specimen-index">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" src="./assets/filling-' + filling.id + '.webp" alt=""><h3>' + filling.name + '</h3><p>' + filling.note + '</p><div class="page-dots">' + dots + '</div></article>' +
+      '<article class="ingredient-leaf"><span class="specimen-index" data-role="filling-count">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + filling.id + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div></article>' +
       '<button class="booklet-arrow" data-action="next-filling" aria-label="下一个主馅">→</button></div></div>' +
-      '<button class="primary-action" data-action="confirm-filling">就放' + filling.name + '</button>' +
+      '<button class="primary-action" data-role="filling-confirm" data-action="confirm-filling">就放' + filling.name + '</button>' +
       '</section>';
   }
 
@@ -284,16 +294,19 @@
     ensureSurpriseSet();
     var choices = state.surpriseSet.map(function (item, index) {
       var caught = state.surpriseId === item.id && state.surpriseOutcome === 'caught';
-      return '<button class="falling-choice ' + (caught ? 'is-caught' : '') + '" data-action="catch-surprise" data-id="' + item.id + '" ' + (state.surpriseOutcome ? 'disabled' : '') + '>' +
+      return '<button class="falling-choice ' + (caught ? 'is-caught' : '') + '" data-action="catch-surprise" data-id="' + item.id + '" aria-pressed="' + (caught ? 'true' : 'false') + '">' +
         '<span class="falling-index">0' + (index + 1) + '</span>' +
-        '<span class="falling-object" style="--object-color:' + item.color + ';--delay:-' + (index * 1.1) + 's"></span>' +
+        '<span class="falling-object" style="--object-color:' + item.color + ';--photo-position:' + item.photo + ';--delay:-' + (index * 1.1) + 's"></span>' +
         '<span class="falling-label"><strong>' + item.name + '</strong><small>' + item.form + '</small></span></button>';
     }).join('');
     var settled = Boolean(state.surpriseOutcome);
+    var chosenName = state.surpriseOutcome === 'caught' ? (pickById(Content.surprises, state.surpriseId) || {}).name : state.surpriseOutcome === 'missed' ? '今日不加料' : '';
     return '<section class="screen atelier-step">' + stepMeta('04 / 加点意外', 50) +
-      '<div class="screen-copy"><p class="eyebrow">案台边有点动静</p><h1 class="screen-title">有三样东西掉下来了</h1><p class="screen-note">接住一个，或让它们落在桌边</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">案边落了几味小料</p><h1 class="screen-title">要不要加一点意外？</h1><p class="screen-note">只留一味也可以。点它放进配料碟；不想加，就留在案边。</p></div>' +
       '<div class="stage surprise-stage">' + choices + '</div>' +
-      (settled ? '<button class="primary-action" data-action="confirm-surprise">继续做月饼</button>' : '<button class="quiet-action" data-action="dodge-surprise">都不要</button>') +
+      '<div class="surprise-summary" data-role="surprise-summary">' + (settled ? '已选：' + escapeHtml(chosenName) + '，还可以换一味。' : '还没决定也没关系。') + '</div>' +
+      '<button class="quiet-action surprise-dodge" data-action="dodge-surprise">今日不加料</button>' +
+      '<button class="primary-action" data-action="confirm-surprise" ' + (settled ? '' : 'disabled') + '>带着它继续做</button>' +
       '</section>';
   }
 
@@ -317,14 +330,14 @@
   function renderStamp() {
     var choices = Content.stamps.map(function (stamp) {
       var selected = state.stampId === stamp.id;
-      return '<button class="stamp-choice ' + (selected ? 'is-selected' : '') + '" data-action="pick-stamp" data-id="' + stamp.id + '"><b>' + stamp.mark + '</b><small>' + stamp.label + '</small></button>';
+      return '<button class="stamp-choice ' + (selected ? 'is-selected' : '') + '" data-action="pick-stamp" data-id="' + stamp.id + '" aria-pressed="' + (selected ? 'true' : 'false') + '"><span class="stamp-preview stamp-' + stamp.id + '" aria-hidden="true"></span><b>' + stamp.name + '</b><small>' + stamp.label + '</small></button>';
     }).join('');
     var current = pickById(Content.stamps, state.stampId) || Content.stamps[0];
     var depth = clamp(state.stampHoldMs / 1600, 0, 1);
     return '<section class="screen">' + stepMeta('06 / 压花纹', 75) +
-      '<div class="screen-copy"><p class="eyebrow">轮到模具留下记号</p><h1 class="screen-title">挑一个花纹，压进去</h1><p class="screen-note">选好后按住模具，等花纹慢慢显出来</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">轮到模具留下记号</p><h1 class="screen-title">挑一枚花纹，压进去</h1><p class="screen-note">花纹会留在这只月饼上。选好后，按住模具到刻度满格。</p></div>' +
       '<div class="stage" style="flex-direction:column"><div class="stamp-list">' + choices + '</div>' +
-      '<button class="press-pad" data-action="press-stamp" aria-label="长按压模"><span class="press-mark" style="--mark-opacity:' + (0.18 + depth * 0.62).toFixed(2) + '">' + current.mark + '</span></button></div>' +
+      '<button class="press-pad stamp-' + current.id + '" data-action="press-stamp" aria-label="长按压模"><span class="press-mark stamp-preview stamp-' + current.id + '" style="--mark-opacity:' + (0.18 + depth * 0.62).toFixed(2) + '"></span><span class="press-pattern-label">' + current.name + '</span></button></div>' +
       '<div class="press-meter" style="--meter:' + Math.round(depth * 100) + '%"><span></span></div>' +
       '<button class="primary-action" data-action="confirm-stamp" ' + (state.stampId && state.stampHoldMs >= 700 ? '' : 'disabled') + '>花纹压好了</button></section>';
   }
@@ -365,16 +378,15 @@
     var surprise = pickById(Content.surprises, state.surpriseId);
     var stamp = pickById(Content.stamps, state.stampId) || Content.stamps[0];
     var hiddenPages = Engine.getHiddenPages({ ratioAdjustments: state.ratioAdjustments, bakeLevel: state.bakeLevel });
-    var evidence = Engine.selectEvidence(state.session, 5);
-    var fallbacks = [
-      '你给月亮选了“' + skin.name + '”，第一层先从自己熟悉的触感开始。',
-      '夹心最后停在 ' + state.ratio + ':' + (100 - state.ratio) + '，一共调整了 ' + state.ratioAdjustments + ' 次。',
-      surprise ? '意外掉下来时，你留下了“' + surprise.name + '”。' : '意外掉下来时，你决定什么都不接。',
-      '火候走到 ' + Math.round(state.bakeLevel) + '%，你才把月亮取出来。',
+    var ratioNote = state.ratioAdjustments > 12 ? '夹心来回试了几次，最后还是留在你顺手的比例。' : '夹心很快定了下来，你知道自己更想吃哪一边。';
+    var bakeNote = state.bakeLevel >= 84 ? '你等到颜色更深一些才出炉，想要一点焦香。' : state.bakeLevel <= 58 ? '颜色刚泛金就取出，留住了轻一点的口感。' : '火候到浅金时你便取出，刚好不抢馅料的味道。';
+    var notes = [
+      '外层选了' + skin.name + '，这一口先从喜欢的触感开始。',
+      '主馅放了' + filling.name + '，' + ratioNote,
+      surprise ? '案边的小料里，你留下了' + surprise.name + '。' : '案边的小料，今晚一味也没加。',
+      '最后压的是' + stamp.name + '，' + stamp.label + '。',
+      bakeNote,
     ];
-    fallbacks.forEach(function (item) {
-      if (evidence.length < 5 && evidence.indexOf(item) === -1) evidence.push(item);
-    });
     state.result = {
       code: code,
       name: archetype.name,
@@ -390,12 +402,14 @@
       blend: blend,
       surprise: surprise,
       stamp: stamp,
-      evidence: evidence,
+      notes: notes,
+      evidence: Engine.selectEvidence(state.session, 5),
       hiddenPages: hiddenPages,
       model: {
         bakeLevel: state.bakeLevel,
         skinId: state.skinId,
         fillingId: state.fillingId,
+        stampId: stamp.id,
         fillingColor: filling.color,
         blendColors: blend.colors,
         ratio: state.ratio,
@@ -408,18 +422,18 @@
   }
 
   function anatomyPage(result) {
-    return '<article class="result-page anatomy"><p class="eyebrow">切面01</p><h2 class="screen-title">里面装了什么</h2>' +
+    return '<article class="result-page anatomy"><p class="eyebrow">切面01</p><h2 class="screen-title">切开看看</h2>' +
       '<canvas id="anatomy-canvas" class="result-canvas"></canvas>' +
       '<div class="anatomy-metrics">' +
-      '<div class="anatomy-label one"><b>情绪 ' + result.traits.emotion + '%</b>更容易把感受放进馅里</div>' +
-      '<div class="anatomy-label two"><b>掌控 ' + result.traits.control + '%</b>想把比例调得多准</div>' +
-      '<div class="anatomy-label three"><b>焦边 ' + Math.max(0, Math.round(state.bakeLevel - 74)) + '%</b>多等了几分火候</div>' +
-      '<div class="anatomy-label four"><b>边界 ' + result.traits.boundary + '%</b>面对意外时有多坚定</div></div></article>';
+      '<div class="anatomy-label one"><b>' + result.skin.name + '</b>外层先定下这只月饼的口感</div>' +
+      '<div class="anatomy-label two"><b>' + result.filling.name + '</b>主馅藏在最里面</div>' +
+      '<div class="anatomy-label three"><b>' + result.stamp.name + '</b>压在表面，留作今晚的记号</div>' +
+      '<div class="anatomy-label four"><b>' + bakeLabel(state.bakeLevel).split('·')[0] + '</b>是你决定的最后火候</div></div></article>';
   }
 
   function evidencePage(result) {
-    return '<article class="result-page"><p class="eyebrow">切面02</p><h2 class="screen-title">为什么是这个结果</h2><p class="screen-note">我们记下的是你的选择和操作，不是食材的随机掉落</p>' +
-      '<ol class="evidence-list">' + result.evidence.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ol></article>';
+    return '<article class="result-page"><p class="eyebrow">切面02</p><h2 class="screen-title">这一轮的手记</h2><p class="screen-note">不量化你，只记住你做月饼时留下的偏好。</p>' +
+      '<ol class="evidence-list">' + result.notes.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ol></article>';
   }
 
   function recipePage(result) {
@@ -431,15 +445,15 @@
       '<div class="recipe-row"><span>夹心</span><strong>' + result.blend.left + state.ratio + '%·' + result.blend.right + (100 - state.ratio) + '%</strong></div>' +
       '<div class="recipe-row"><span>意外</span><strong>' + surpriseName + '</strong></div>' +
       '<div class="recipe-row"><span>分岔</span><strong>' + fateName + '</strong></div>' +
-      '<div class="recipe-row"><span>月纹</span><strong>' + result.stamp.label + '</strong></div>' +
+      '<div class="recipe-row"><span>月纹</span><strong>' + result.stamp.name + '·' + result.stamp.label + '</strong></div>' +
       '<div class="recipe-row"><span>火候</span><strong>' + bakeLabel(state.bakeLevel).split('·')[0] + '</strong></div></div></article>';
   }
 
   function relationshipPage(result) {
     return '<article class="result-page"><p class="eyebrow">切面04</p><h2 class="screen-title">和谁一起吃</h2>' +
-      '<div class="relationship-block"><h3>适合和谁一起吃月饼</h3><p>' + result.relation + '</p></div>' +
-      '<div class="relationship-block"><h3>你最受不了什么</h3><p>' + result.cannotStand + '</p></div>' +
-      '<div class="relationship-block"><h3>今晚的一句话</h3><p>' + result.tonight + '</p></div>' +
+      '<div class="relationship-block"><h3>适合同席</h3><p>' + result.relation + '</p></div>' +
+      '<div class="relationship-block"><h3>不太合口</h3><p>' + result.cannotStand + '</p></div>' +
+      '<div class="relationship-block"><h3>今夜小笺</h3><p>' + result.tonight + '</p></div>' +
       '<p class="essay">' + result.essay + '</p></article>';
   }
 
@@ -453,7 +467,7 @@
   function getResultPages() {
     var result = state.result;
     var pages = [
-      '<article class="result-page result-hero"><p class="result-kicker">你的月饼人格·第' + result.number + '轮</p><canvas id="result-hero-canvas" class="result-canvas"></canvas><p class="result-recipe">' + escapeHtml(result.skin.name) + '·' + escapeHtml(result.filling.name) + '</p><h1 class="result-name">' + result.name + '</h1><p class="result-line">' + result.line + '</p><div class="result-actions"><button data-action="open-share">生成结果图</button><button data-action="save-result">留在本机</button></div></article>',
+      '<article class="result-page result-hero"><p class="result-kicker">今夜的月饼·第' + result.number + '轮</p><canvas id="result-hero-canvas" class="result-canvas"></canvas><p class="result-recipe">' + escapeHtml(result.skin.name) + '·' + escapeHtml(result.filling.name) + '·' + escapeHtml(result.stamp.name) + '</p><h1 class="result-name">' + result.name + '</h1><p class="result-line">' + result.line + '</p><div class="result-actions"><button data-action="open-share">生成结果图</button><button data-action="save-result">留在本机</button></div></article>',
       anatomyPage(result),
       evidencePage(result),
       recipePage(result),
@@ -694,7 +708,7 @@
     var blend = Content.blends[state.blendIndex];
     var traits = state.result ? state.result.traits : state.session.traits;
     return {
-      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
+      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, stampId: state.stampId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
       emotion: traits.emotion, boundary: traits.boundary, control: traits.control, intuition: traits.intuition,
     };
   }
@@ -820,7 +834,13 @@
 
   function chooseSkin(id) {
     state.skinId = id;
-    render();
+    app.querySelectorAll('[data-action="pick-skin"]').forEach(function (card) {
+      var selected = card.dataset.id === id;
+      card.classList.toggle('is-selected', selected);
+      card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+    var confirm = app.querySelector('[data-action="confirm-skin"]');
+    if (confirm) confirm.disabled = false;
   }
 
   function confirmSkin() {
@@ -835,7 +855,48 @@
   function turnFilling(direction) {
     var count = Content.fillings.length;
     state.fillingIndex = (state.fillingIndex + direction + count) % count;
-    render();
+    updateFillingView();
+  }
+
+  function updateFillingView() {
+    var filling = Content.fillings[state.fillingIndex];
+    var photo = app.querySelector('[data-role="filling-photo"]');
+    if (!photo) return;
+    photo.classList.add('is-changing');
+    root.setTimeout(function () {
+      if (!photo.isConnected) return;
+      photo.src = './assets/filling-' + filling.id + '.webp';
+      photo.alt = filling.name;
+      photo.classList.remove('is-changing');
+    }, 90);
+    var title = app.querySelector('[data-role="filling-title"]');
+    var count = app.querySelector('[data-role="filling-count"]');
+    var name = app.querySelector('[data-role="filling-name"]');
+    var note = app.querySelector('[data-role="filling-note"]');
+    var confirm = app.querySelector('[data-role="filling-confirm"]');
+    var dots = app.querySelector('[data-role="filling-dots"]');
+    if (title) title.textContent = '原来你喜欢' + filling.name + '呢';
+    if (count) count.textContent = '主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length;
+    if (name) name.textContent = filling.name;
+    if (note) note.textContent = filling.note;
+    if (confirm) confirm.textContent = '就放' + filling.name;
+    if (dots) dots.innerHTML = Content.fillings.map(function (_, index) { return '<span class="' + (index === state.fillingIndex ? 'is-active' : '') + '"></span>'; }).join('');
+  }
+
+  function updateBlendView() {
+    var blend = Content.blends[state.blendIndex];
+    app.querySelectorAll('[data-action="select-blend"]').forEach(function (tab) {
+      tab.classList.toggle('is-selected', Number(tab.dataset.index) === state.blendIndex);
+    });
+    var orb = app.querySelector('[data-role="blend-orb"]');
+    var photo = app.querySelector('.blend-photo');
+    if (orb) {
+      orb.style.setProperty('--blend-left', blend.colors[0]);
+      orb.style.setProperty('--blend-right', blend.colors[1]);
+      orb.classList.add('is-changing');
+      root.setTimeout(function () { if (orb.isConnected) orb.classList.remove('is-changing'); }, 160);
+    }
+    if (photo) photo.src = './assets/mooncake-cut-' + (state.fillingId || 'lotus') + '.webp';
   }
 
   function confirmFilling() {
@@ -863,17 +924,28 @@
   }
 
   function catchSurprise(id) {
-    if (state.surpriseOutcome) return;
     state.surpriseId = id;
     state.surpriseOutcome = 'caught';
-    render();
+    updateSurpriseView();
   }
 
   function dodgeSurprise() {
-    if (state.surpriseOutcome) return;
     state.surpriseId = null;
     state.surpriseOutcome = 'missed';
-    render();
+    updateSurpriseView();
+  }
+
+  function updateSurpriseView() {
+    var chosen = pickById(Content.surprises, state.surpriseId);
+    app.querySelectorAll('[data-action="catch-surprise"]').forEach(function (card) {
+      var selected = state.surpriseOutcome === 'caught' && card.dataset.id === state.surpriseId;
+      card.classList.toggle('is-caught', selected);
+      card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+    var summary = app.querySelector('[data-role="surprise-summary"]');
+    var confirm = app.querySelector('[data-action="confirm-surprise"]');
+    if (summary) summary.textContent = state.surpriseOutcome === 'caught' && chosen ? '已选：' + chosen.name + '，还可以换一味。' : '今天不加料，留一点空白。';
+    if (confirm) confirm.disabled = false;
   }
 
   function confirmSurprise() {
@@ -928,7 +1000,24 @@
       state.stampHoldMs = 0;
       state.stampReleases = 0;
     }
-    render();
+    app.querySelectorAll('[data-action="pick-stamp"]').forEach(function (choice) {
+      var selected = choice.dataset.id === state.stampId;
+      choice.classList.toggle('is-selected', selected);
+      choice.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+    var current = pickById(Content.stamps, state.stampId);
+    var pad = app.querySelector('.press-pad');
+    if (pad && current) {
+      Array.prototype.slice.call(pad.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0) pad.classList.remove(name); });
+      pad.classList.add('stamp-' + current.id);
+      var mark = pad.querySelector('.press-mark');
+      var label = pad.querySelector('.press-pattern-label');
+      if (mark) {
+        Array.prototype.slice.call(mark.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0) mark.classList.remove(name); });
+        mark.classList.add('stamp-' + current.id);
+      }
+      if (label) label.textContent = current.name;
+    }
   }
 
   function confirmStamp() {
@@ -1042,7 +1131,7 @@
       'prev-filling': function () { turnFilling(-1); },
       'next-filling': function () { turnFilling(1); },
       'confirm-filling': confirmFilling,
-      'select-blend': function () { state.blendIndex = Number(control.dataset.index); render(); },
+      'select-blend': function () { state.blendIndex = Number(control.dataset.index); updateBlendView(); },
       'confirm-blend': confirmBlend,
       'catch-surprise': function () { catchSurprise(control.dataset.id); },
       'dodge-surprise': dodgeSurprise,
