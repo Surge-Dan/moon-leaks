@@ -107,6 +107,7 @@
     }
     result.model.skinId = snapshot.skinId;
     result.model.fillingId = snapshot.fillingId;
+    result.model.fillingAsset = snapshot.fillingAsset || ((pickById(Content.fillings, snapshot.fillingId) || {}).asset) || snapshot.fillingId;
     result.model.stampId = snapshot.stampId;
     if (!Array.isArray(result.notes)) {
       result.notes = [
@@ -229,8 +230,8 @@
     return '<section class="screen intro-screen">' +
       stepMeta('中秋夜', 0, false) +
       '<div class="atelier-intro"><div class="atelier-photo"><img src="./assets/atelier-hero.webp" alt="月光下的中秋烘焙案台"><span class="atelier-seal">月<br>下<br>案</span><span class="atelier-caption">桂影入窗，案上有香</span></div>' +
-      '<div class="atelier-copy"><h1 class="screen-title">今晚，做一只月饼</h1><p class="screen-note">挑一层饼皮，放一味喜欢的馅。要不，现在开工？</p></div></div>' +
-      '<div class="atelier-actions"><button class="primary-action intro-action" data-action="start-intro">开始做一只 <span aria-hidden="true">↗</span></button>' +
+      '<div class="atelier-copy"><h1 class="screen-title">做一只月饼</h1><p class="screen-note">选饼皮、选馅料，调好一份月饼配方。</p></div></div>' +
+      '<div class="atelier-actions"><button class="primary-action intro-action" data-action="start-intro">开始制作 <span aria-hidden="true">↗</span></button>' +
       (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮</button>' : '') + '</div>' +
       '</section>';
   }
@@ -257,7 +258,7 @@
     return '<section class="screen">' + stepMeta('02 / 放主馅', 25) +
       '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title" data-role="filling-title">原来你喜欢' + filling.name + '呢</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
       '<div class="stage"><div class="booklet" data-role="filling-booklet"><button class="booklet-arrow" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
-      '<article class="ingredient-leaf"><span class="specimen-index" data-role="filling-count">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + filling.id + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div></article>' +
+      '<article class="ingredient-leaf"><span class="specimen-index" data-role="filling-count">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + (filling.asset || filling.id) + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div></article>' +
       '<button class="booklet-arrow" data-action="next-filling" aria-label="下一个主馅">→</button></div></div>' +
       '<button class="primary-action" data-role="filling-confirm" data-action="confirm-filling">就放' + filling.name + '</button>' +
       '</section>';
@@ -271,7 +272,7 @@
     return '<section class="screen">' + stepMeta('03 / 调夹心', 38) +
       '<div class="screen-copy"><p class="eyebrow">两种味道配在一起</p><h1 class="screen-title">这一口，想偏向哪边？</h1><p class="screen-note">拖动月饼剖面里的分界线，调到你觉得刚刚好</p></div>' +
       '<div class="stage"><div class="blend-layout"><div class="blend-tabs">' + tabs + '</div>' +
-      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '"><img class="blend-photo" src="./assets/mooncake-cut-' + (state.fillingId || 'lotus') + '.webp" alt="月饼剖面参考图">' +
+      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '"><img class="blend-photo" src="./assets/mooncake-cut-' + ((pickById(Content.fillings, state.fillingId) || {}).asset || state.fillingId || 'lotus') + '.webp" alt="月饼剖面参考图">' +
       '<span class="blend-half left"></span><span class="blend-half right"></span><span class="blend-seam"></span></div>' +
       '<div class="ratio-readout"><span data-role="ratio-left">' + state.ratio + '</span> : <span data-role="ratio-right">' + (100 - state.ratio) + '</span></div>' +
       '<input class="ratio-range" data-role="ratio-range" aria-label="夹心比例" type="range" min="10" max="90" value="' + state.ratio + '"></div></div>' +
@@ -313,9 +314,9 @@
   function renderFate() {
     var fate = state.fate;
     return '<section class="screen">' + stepMeta('加料 / 二选一', 56) +
-      '<div class="screen-copy"><p class="eyebrow">案台上只留一件</p><h1 class="screen-title">如果只能留一个，你会选哪样？</h1><p class="screen-note">不用解释，凭第一反应就好</p></div>' +
-      '<div class="stage"><div class="fate-stage"><button class="fate-choice" data-action="choose-fate" data-side="left">' + fate.left.label + '</button>' +
-      '<button class="fate-choice" data-action="choose-fate" data-side="right">' + fate.right.label + '</button></div></div>' +
+      '<div class="screen-copy"><p class="eyebrow">案台上只留一件</p><h1 class="screen-title">你想把哪一味留下？</h1><p class="screen-note">看看两张配方签，选一张放进月饼。</p></div>' +
+      '<div class="stage"><div class="fate-stage"><button class="fate-choice fate-choice-left" data-action="choose-fate" data-side="left"><span class="fate-index">01</span><span class="fate-glyph" aria-hidden="true"></span><strong>' + fate.left.label + '</strong><small>先把熟悉的味道收好</small></button>' +
+      '<button class="fate-choice fate-choice-right" data-action="choose-fate" data-side="right"><span class="fate-index">02</span><span class="fate-glyph" aria-hidden="true"></span><strong>' + fate.right.label + '</strong><small>给这一口留一点变化</small></button></div></div>' +
       '</section>';
   }
 
@@ -409,6 +410,7 @@
         bakeLevel: state.bakeLevel,
         skinId: state.skinId,
         fillingId: state.fillingId,
+        fillingAsset: filling.asset || filling.id,
         stampId: stamp.id,
         fillingColor: filling.color,
         blendColors: blend.colors,
@@ -672,6 +674,13 @@
       started = 0;
       root.cancelAnimationFrame(raf);
       pad.classList.remove('is-pressing');
+      var finalDepth = clamp(state.stampHoldMs / 1600, 0, 1);
+      var finalMark = pad.querySelector('.press-mark');
+      if (finalMark) {
+        finalMark.style.setProperty('--mark-opacity', (0.18 + finalDepth * .72).toFixed(2));
+        finalMark.classList.toggle('is-imprinted', state.stampHoldMs >= 700);
+      }
+      pad.classList.toggle('is-imprinted', state.stampHoldMs >= 700);
       if (state.stampId && state.stampHoldMs >= 700) {
         button.disabled = false;
       } else if (!state.stampId) {
@@ -698,6 +707,12 @@
         state.stampHoldMs = Math.max(state.stampHoldMs, 900);
         state.stampReleases += 1;
         meter.style.setProperty('--meter', '56%');
+        var mark = pad.querySelector('.press-mark');
+        if (mark) {
+          mark.style.setProperty('--mark-opacity', '.62');
+          mark.classList.add('is-imprinted');
+        }
+        pad.classList.add('is-imprinted');
         button.disabled = false;
       }
     });
@@ -708,7 +723,7 @@
     var blend = Content.blends[state.blendIndex];
     var traits = state.result ? state.result.traits : state.session.traits;
     return {
-      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, stampId: state.stampId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
+      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, fillingAsset: filling.asset || filling.id, stampId: state.stampId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
       emotion: traits.emotion, boundary: traits.boundary, control: traits.control, intuition: traits.intuition,
     };
   }
@@ -865,7 +880,7 @@
     photo.classList.add('is-changing');
     root.setTimeout(function () {
       if (!photo.isConnected) return;
-      photo.src = './assets/filling-' + filling.id + '.webp';
+      photo.src = './assets/filling-' + (filling.asset || filling.id) + '.webp';
       photo.alt = filling.name;
       photo.classList.remove('is-changing');
     }, 90);
@@ -896,7 +911,10 @@
       orb.classList.add('is-changing');
       root.setTimeout(function () { if (orb.isConnected) orb.classList.remove('is-changing'); }, 160);
     }
-    if (photo) photo.src = './assets/mooncake-cut-' + (state.fillingId || 'lotus') + '.webp';
+    if (photo) {
+      var filling = pickById(Content.fillings, state.fillingId) || Content.fillings[0];
+      photo.src = './assets/mooncake-cut-' + (filling.asset || filling.id || 'lotus') + '.webp';
+    }
   }
 
   function confirmFilling() {
@@ -1051,6 +1069,7 @@
       choices: state.session.choices,
       snapshot: {
         skinId: state.skinId, fillingIndex: state.fillingIndex, fillingId: state.fillingId,
+        fillingAsset: ((pickById(Content.fillings, state.fillingId) || {}).asset) || state.fillingId,
         blendIndex: state.blendIndex, ratio: state.ratio, ratioAdjustments: state.ratioAdjustments,
         surpriseId: state.surpriseId, fate: state.fate, fateChoice: state.fateChoice,
         stampId: state.stampId, bakeLevel: state.bakeLevel,

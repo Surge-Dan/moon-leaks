@@ -227,7 +227,7 @@
     var ratio = clamp((model && model.ratio) || 50, 10, 90) / 100;
     var geometry = getMooncakeGeometry(model, radius);
     var hasPhoto = cakeImage && cakeImage.complete && cakeImage.naturalWidth > 0;
-    var chosenCut = cutAssets[model && model.fillingId] || cutAssets.lotus;
+    var chosenCut = cutAssets[model && (model.fillingAsset || model.fillingId)] || cutAssets.lotus;
     var cutImage = chosenCut.image;
     var hasCutPhoto = cutImage && cutImage.complete && cutImage.naturalWidth > 0;
     var skinId = model && model.skinId;

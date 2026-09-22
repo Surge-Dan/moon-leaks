@@ -69,7 +69,7 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚，做一只月饼", exact=False).is_visible()
+        assert page.get_by_text("做一只月饼", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
         page.evaluate(
@@ -85,7 +85,7 @@ def main():
             """
         )
         page.reload()
-        assert page.get_by_text("今晚，做一只月饼", exact=False).is_visible()
+        assert page.get_by_text("做一只月饼", exact=False).is_visible()
         assert page.locator('[data-action="open-last"]').count() == 0
         assert not errors, errors
         page.evaluate(

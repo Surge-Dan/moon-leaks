@@ -206,3 +206,58 @@ body { color: var(--atelier-ink); }
 @media (prefers-reduced-motion: reduce) {
   .screen, .ingredient-photo { animation: none; transition-duration: .01ms; }
 }
+
+/* 细节收口：标题清晰、正文克制，避免浏览器把“伪毛笔”渲染成廉价装饰字 */
+.screen-title,
+.atelier-copy .screen-title,
+.ingredient-leaf h3,
+.fate-choice strong,
+.stamp-choice b,
+.falling-label strong {
+  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+.screen-note,
+.primary-action,
+.quiet-action,
+.blend-tab,
+.ingredient-leaf p,
+.falling-label small,
+.fate-choice small,
+.stamp-choice small {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.intro-screen .screen-copy { margin-top: 24px; }
+.intro-screen .screen-title { max-width: none; font-size: clamp(34px, 9vw, 46px); line-height: 1.18; }
+.intro-screen .screen-note { max-width: 100%; font-size: 13px; line-height: 1.55; }
+.intro-action { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif; font-weight: 700; letter-spacing: .02em; }
+.blend-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; overflow: visible; padding-bottom: 2px; }
+.blend-tab { min-height: 42px; padding: 8px 4px; white-space: normal; line-height: 1.25; }
+.fate-stage { gap: 12px; }
+.fate-choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  min-height: 265px;
+  padding: 18px 16px 20px;
+  text-align: left;
+  background: linear-gradient(160deg, #fffdfa, #f2e7d4);
+  color: var(--atelier-ink);
+}
+.fate-choice:active,
+.fate-choice.is-selected { background: linear-gradient(160deg, #f1d4b5, #e8b58d); color: var(--atelier-ink); }
+.fate-index { position: absolute; top: 15px; left: 15px; color: var(--atelier-red); font-family: "Noto Sans SC", sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.fate-glyph { width: 64px; height: 64px; margin: 22px 0 auto; border: 1px solid rgba(103,65,38,.25); border-radius: 50%; background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.75), transparent 23%), linear-gradient(145deg, #d69c59, #9b4f35); box-shadow: inset -8px -9px 16px rgba(78,38,22,.2), 0 8px 18px rgba(93,53,28,.14); }
+.fate-choice-right .fate-glyph { background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.7), transparent 23%), linear-gradient(145deg, #8fa088, #52665a); }
+.fate-choice strong { display: block; font-size: 24px; line-height: 1.2; }
+.fate-choice small { display: block; margin-top: 8px; color: #796c5d; font-size: 11px; line-height: 1.5; }
+.fate-choice:active small,
+.fate-choice.is-selected small { color: rgba(48,37,29,.7); }
+.falling-label small { display: block; min-height: 2.7em; font-size: 9px; line-height: 1.35; }
+.press-pad .press-mark { opacity: var(--mark-opacity, .22); transition: opacity 160ms ease, filter 160ms ease; }
+.press-pad .press-mark.is-imprinted,
+.press-pad.is-imprinted .press-mark { opacity: .9; filter: drop-shadow(0 0 5px rgba(255,225,163,.26)); }
+.press-pad.is-imprinted .press-pattern-label { color: #ffe8b7; }

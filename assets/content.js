@@ -17,11 +17,14 @@
   ];
 
   var fillings = [
-    { id: 'lotus', name: '莲蓉', note: '细腻绵密，甜度刚好', color: '#c99c62', deltas: { novelty: -28, emotion: 2, boundary: 12 } },
-    { id: 'sesame', name: '黑芝麻', note: '微苦坚果香，越嚼越浓', color: '#34302d', deltas: { emotion: 16, aftertaste: 30, decorum: 14 } },
-    { id: 'osmanthus', name: '桂花酒酿', note: '花香轻，酒酿香慢慢上来', color: '#d7aa55', deltas: { novelty: 12, emotion: 28, aftertaste: 24 } },
-    { id: 'custard', name: '海盐奶黄', note: '软软的奶香，最后一点咸', color: '#e0b756', deltas: { novelty: 8, emotion: 20, intuition: 12 } },
-    { id: 'coffee', name: '冷萃咖啡', note: '咖啡味清楚，收尾不太甜', color: '#70452f', deltas: { novelty: 24, emotion: -8, boundary: 16 } },
+    { id: 'lotus', asset: 'lotus', name: '莲蓉', note: '细腻绵密，甜度刚好', color: '#c99c62', deltas: { novelty: -28, emotion: 2, boundary: 12 } },
+    { id: 'sesame', asset: 'sesame', name: '黑芝麻', note: '微苦坚果香，越嚼越浓', color: '#34302d', deltas: { emotion: 16, aftertaste: 30, decorum: 14 } },
+    { id: 'osmanthus', asset: 'osmanthus', name: '桂花酒酿', note: '花香轻，酒酿香慢慢上来', color: '#d7aa55', deltas: { novelty: 12, emotion: 28, aftertaste: 24 } },
+    { id: 'custard', asset: 'custard', name: '海盐奶黄', note: '软软的奶香，最后一点咸', color: '#e0b756', deltas: { novelty: 8, emotion: 20, intuition: 12 } },
+    { id: 'coffee', asset: 'coffee', name: '冷萃咖啡', note: '咖啡味清楚，收尾不太甜', color: '#70452f', deltas: { novelty: 24, emotion: -8, boundary: 16 } },
+    { id: 'chestnut', asset: 'lotus', name: '栗子蓉', note: '温和的坚果香，入口很稳', color: '#ad7848', deltas: { novelty: -4, control: 12, aftertaste: 18 } },
+    { id: 'redbean', asset: 'lotus', name: '赤豆沙', note: '豆香厚一点，甜味收得住', color: '#8e4a39', deltas: { emotion: 18, decorum: 14, aftertaste: 12 } },
+    { id: 'matcha', asset: 'osmanthus', name: '抹茶流心', note: '茶味清亮，后面有一点苦', color: '#76865f', deltas: { novelty: 26, boundary: 12, intuition: 10 } },
   ];
 
   var blends = [
@@ -29,6 +32,8 @@
     { id: 'cocoa-salt', left: '黑巧', right: '海盐', colors: ['#4c2e25', '#d7d0bd'], deltas: { emotion: 12, boundary: 16 } },
     { id: 'plum-flower', left: '酸梅', right: '桂花', colors: ['#783a45', '#c9993d'], deltas: { novelty: 18, aftertaste: 18 } },
     { id: 'coffee-custard', left: '咖啡', right: '奶黄', colors: ['#68402d', '#e3bd62'], deltas: { novelty: 12, intuition: -8 } },
+    { id: 'chestnut-sesame', left: '栗子', right: '黑芝麻', colors: ['#9a633d', '#38302d'], deltas: { control: 12, aftertaste: 22 } },
+    { id: 'matcha-redbean', left: '抹茶', right: '赤豆', colors: ['#74855d', '#9b5140'], deltas: { novelty: 22, emotion: 14 } },
   ];
 
   var surprises = [

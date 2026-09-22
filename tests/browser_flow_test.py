@@ -45,7 +45,7 @@ def main():
         page.goto(BASE_URL)
         page.wait_for_load_state("networkidle")
         page.screenshot(path=str(SCREENSHOTS / "01-intro.png"), full_page=True)
-        assert page.get_by_text("今晚，做一只月饼", exact=False).is_visible()
+        assert page.get_by_text("做一只月饼", exact=False).is_visible()
         page.locator('[data-action="start-intro"]').click()
         page.wait_for_selector('[data-action="pick-skin"]')
         page.wait_for_timeout(520)
