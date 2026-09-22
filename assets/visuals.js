@@ -29,7 +29,7 @@
   }
   var wholeAsset = localImage('./assets/mooncake-whole.webp');
   var cutAssets = {};
-  ['lotus', 'sesame', 'osmanthus', 'custard', 'coffee'].forEach(function (id) {
+  ['lotus', 'sesame', 'osmanthus', 'custard', 'coffee', 'chestnut', 'redbean', 'matcha'].forEach(function (id) {
     cutAssets[id] = localImage('./assets/mooncake-cut-' + id + '.webp');
   });
   var cakeImage = wholeAsset.image;
@@ -285,6 +285,41 @@
       ctx.drawImage(cakeImage, originX - radius * 1.3, cy - radius * 1.32, radius * 2.6, radius * 2.6);
       ctx.restore();
     }
+    function drawSurfaceAccents(originX) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(originX, cy, radius * .99, 0, Math.PI * 2);
+      ctx.clip();
+      var tint = ctx.createRadialGradient(originX - radius * .28, cy - radius * .32, radius * .04, originX, cy, radius * .96);
+      tint.addColorStop(0, filling);
+      tint.addColorStop(.62, 'rgba(255,255,255,0)');
+      tint.addColorStop(1, crust);
+      ctx.globalAlpha = .28;
+      ctx.globalCompositeOperation = 'soft-light';
+      ctx.fillStyle = tint;
+      ctx.fillRect(originX - radius, cy - radius, radius * 2, radius * 2);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = .2;
+      ctx.strokeStyle = blendA;
+      ctx.lineWidth = Math.max(2, radius * .035);
+      ctx.beginPath();
+      ctx.moveTo(originX - radius * .7, cy + radius * (.7 - ratio * .16));
+      ctx.quadraticCurveTo(originX, cy - radius * .1, originX + radius * .7, cy - radius * (.7 - ratio * .16));
+      ctx.stroke();
+      ctx.globalAlpha = .13;
+      ctx.strokeStyle = blendB;
+      ctx.beginPath();
+      ctx.moveTo(originX - radius * .72, cy - radius * (.7 - ratio * .12));
+      ctx.quadraticCurveTo(originX, cy + radius * .14, originX + radius * .72, cy + radius * (.7 - ratio * .12));
+      ctx.stroke();
+      ctx.globalAlpha = .26 + bake / 520;
+      ctx.strokeStyle = lightCrust;
+      ctx.lineWidth = Math.max(1.2, radius * .016);
+      ctx.beginPath();
+      ctx.arc(originX, cy, radius * .9, Math.PI * .18, Math.PI * .82);
+      ctx.stroke();
+      ctx.restore();
+    }
     var shell = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.38, radius * 0.06, cx, cy, radius);
     shell.addColorStop(0, lightCrust);
     shell.addColorStop(0.74, crust);
@@ -356,6 +391,7 @@
     if (cut <= 0.02) {
       if (hasPhoto) {
         drawPhoto(cx);
+        drawSurfaceAccents(cx);
         drawStampPattern(ctx, cx, cy - radius * .03, radius, model && model.stampId, .38);
         return;
       }

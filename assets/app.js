@@ -511,6 +511,25 @@
     };
     app.innerHTML = views[state.step]();
     setupCurrentStep();
+    animateStep();
+  }
+
+  function animateStep() {
+    var gsap = root.gsap;
+    var screen = app.querySelector('.screen');
+    if (!gsap || !screen || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var top = screen.querySelector('.topline');
+    var copy = screen.querySelectorAll('.screen-copy > *');
+    var stage = screen.querySelector('.stage');
+    var action = screen.querySelector('.primary-action');
+    var timeline = gsap.timeline({ defaults: { duration: .38, ease: 'power2.out' } });
+    // Keep the layout immediately discoverable for touch and accessibility
+    // checks. A short vertical settle gives the page a crafted transition
+    // without toggling visibility or causing a flash between steps.
+    if (top) timeline.fromTo(top, { y: -5 }, { y: 0 });
+    if (copy.length) timeline.fromTo(copy, { y: 9 }, { y: 0, stagger: .045 }, '-=.2');
+    if (stage) timeline.fromTo(stage, { y: 10 }, { y: 0 }, '-=.2');
+    if (action) timeline.fromTo(action, { y: 7 }, { y: 0 }, '-=.18');
   }
 
   function setupIntro() {
@@ -578,6 +597,32 @@
     var ctx = canvas.getContext('2d');
     ctx.scale(ratio, ratio);
     var width = rect.width;
+    var skin = pickById(Content.skins, state.skinId) || Content.skins[0];
+    var dough = ctx.createRadialGradient(width * .36, width * .32, width * .05, width * .5, width * .5, width * .48);
+    dough.addColorStop(0, skin.color || '#e7c58e');
+    dough.addColorStop(.68, skin.accent || '#b57945');
+    dough.addColorStop(1, '#6f3c2a');
+    ctx.beginPath();
+    ctx.arc(width / 2, rect.height / 2, width * .34, 0, Math.PI * 2);
+    ctx.fillStyle = dough;
+    ctx.shadowColor = 'rgba(48,28,17,.26)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 10;
+    ctx.globalAlpha = .28;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,237,192,.5)';
+    ctx.stroke();
+    for (var flour = 0; flour < 28; flour += 1) {
+      var flourAngle = flour * 2.41;
+      var flourRadius = width * (.18 + (flour % 7) * .026);
+      ctx.beginPath();
+      ctx.arc(width / 2 + Math.cos(flourAngle) * flourRadius, rect.height / 2 + Math.sin(flourAngle) * flourRadius, 1 + (flour % 3) * .35, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,241,205,.28)';
+      ctx.fill();
+    }
     for (var index = 0; index < 18; index += 1) {
       var angle = (Math.PI * 2 * index) / 18;
       var radius = width * (.25 + ((index * 17) % 10) / 100);
@@ -1031,7 +1076,8 @@
       var mark = pad.querySelector('.press-mark');
       var label = pad.querySelector('.press-pattern-label');
       if (mark) {
-        Array.prototype.slice.call(mark.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0) mark.classList.remove(name); });
+        Array.prototype.slice.call(mark.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0 && name !== 'stamp-preview') mark.classList.remove(name); });
+        mark.classList.add('stamp-preview');
         mark.classList.add('stamp-' + current.id);
       }
       if (label) label.textContent = current.name;

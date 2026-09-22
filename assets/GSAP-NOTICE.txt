@@ -1,0 +1,7 @@
+GSAP 3.13.0 is bundled locally for the offline mini-tool.
+Source: https://github.com/greensock/GSAP
+License information: https://gsap.com/standard-license
+
+LXGW WenKai is bundled as a subset webfont for headings.
+Source: https://github.com/lxgw/LxgwWenKai
+License: SIL Open Font License 1.1 (see LXGW-WenKai-OFL.txt).

@@ -22,9 +22,9 @@
     { id: 'osmanthus', asset: 'osmanthus', name: '桂花酒酿', note: '花香轻，酒酿香慢慢上来', color: '#d7aa55', deltas: { novelty: 12, emotion: 28, aftertaste: 24 } },
     { id: 'custard', asset: 'custard', name: '海盐奶黄', note: '软软的奶香，最后一点咸', color: '#e0b756', deltas: { novelty: 8, emotion: 20, intuition: 12 } },
     { id: 'coffee', asset: 'coffee', name: '冷萃咖啡', note: '咖啡味清楚，收尾不太甜', color: '#70452f', deltas: { novelty: 24, emotion: -8, boundary: 16 } },
-    { id: 'chestnut', asset: 'lotus', name: '栗子蓉', note: '温和的坚果香，入口很稳', color: '#ad7848', deltas: { novelty: -4, control: 12, aftertaste: 18 } },
-    { id: 'redbean', asset: 'lotus', name: '赤豆沙', note: '豆香厚一点，甜味收得住', color: '#8e4a39', deltas: { emotion: 18, decorum: 14, aftertaste: 12 } },
-    { id: 'matcha', asset: 'osmanthus', name: '抹茶流心', note: '茶味清亮，后面有一点苦', color: '#76865f', deltas: { novelty: 26, boundary: 12, intuition: 10 } },
+    { id: 'chestnut', asset: 'chestnut', name: '栗子蓉', note: '温和的坚果香，入口很稳', color: '#ad7848', deltas: { novelty: -4, control: 12, aftertaste: 18 } },
+    { id: 'redbean', asset: 'redbean', name: '赤豆沙', note: '豆香厚一点，甜味收得住', color: '#8e4a39', deltas: { emotion: 18, decorum: 14, aftertaste: 12 } },
+    { id: 'matcha', asset: 'matcha', name: '抹茶流心', note: '茶味清亮，后面有一点苦', color: '#76865f', deltas: { novelty: 26, boundary: 12, intuition: 10 } },
   ];
 
   var blends = [

@@ -1,12 +1,20 @@
 :root {
-  --atelier-paper: #f5f1e8;
-  --atelier-paper-deep: #ebe4d5;
-  --atelier-ink: #2c2924;
-  --atelier-muted: #81786b;
-  --atelier-red: #b9583d;
-  --atelier-moon: #c8a86b;
-  --atelier-jade: #6f806d;
-  --atelier-night: #24211e;
+  --atelier-paper: #eef0ea;
+  --atelier-paper-deep: #dfe4dd;
+  --atelier-ink: #25302d;
+  --atelier-muted: #68736d;
+  --atelier-red: #b85b45;
+  --atelier-moon: #d1b574;
+  --atelier-jade: #627b70;
+  --atelier-night: #1d2523;
+}
+
+@font-face {
+  font-family: "MoonKai";
+  src: url('./lxgw-wenkai.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
 }
 
 html, body { background: #dfdbd1; }
@@ -21,7 +29,7 @@ body { color: var(--atelier-ink); }
 }
 .screen {
   padding: calc(17px + var(--safe-top)) 20px calc(20px + var(--safe-bottom));
-  background: linear-gradient(180deg, rgba(249,246,239,.98), rgba(245,241,232,.97));
+  background: linear-gradient(180deg, rgba(244,246,241,.98), rgba(235,239,233,.98));
   animation: none;
 }
 .topline {
@@ -133,9 +141,9 @@ body { color: var(--atelier-ink); }
 .blend-orb { position: relative; width: min(77vw, 310px); height: min(51vw, 210px); aspect-ratio: auto; overflow: hidden; border: 5px solid #d3b88a; border-radius: 18px; background: #231c16; box-shadow: 0 16px 26px rgba(66,43,20,.16); }
 .blend-orb.is-changing { filter: saturate(.82); }
 .blend-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.82) brightness(.95); }
-.blend-half { z-index: 2; opacity: .28; }
-.blend-half.left { background: var(--blend-left); }
-.blend-half.right { background: var(--blend-right); }
+.blend-half { z-index: 2; opacity: .42; mix-blend-mode: multiply; }
+.blend-half.left { background: linear-gradient(90deg, var(--blend-left), transparent 90%); }
+.blend-half.right { background: linear-gradient(270deg, var(--blend-right), transparent 90%); }
 .blend-seam { z-index: 3; width: 2px; background: #fff4db; box-shadow: 0 0 8px rgba(255,223,161,.9); }
 .ratio-readout { color: var(--atelier-ink); font-family: "Songti SC", serif; font-size: 27px; }
 .ratio-range { accent-color: var(--atelier-red); }
@@ -214,9 +222,9 @@ body { color: var(--atelier-ink); }
 .fate-choice strong,
 .stamp-choice b,
 .falling-label strong {
-  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
-  font-weight: 700;
-  letter-spacing: -.025em;
+  font-family: "MoonKai", "Noto Serif SC", "Songti SC", serif;
+  font-weight: 400;
+  letter-spacing: -.01em;
 }
 .screen-note,
 .primary-action,
@@ -261,3 +269,12 @@ body { color: var(--atelier-ink); }
 .press-pad .press-mark.is-imprinted,
 .press-pad.is-imprinted .press-mark { opacity: .9; filter: drop-shadow(0 0 5px rgba(255,225,163,.26)); }
 .press-pad.is-imprinted .press-pattern-label { color: #ffe8b7; }
+
+/* 古典纸色不走“米白+橙按钮”的模板化路线：以冷纸、黛青、朱砂作一套稳定色阶 */
+.app-shell { background-color: var(--atelier-paper); background-image: linear-gradient(rgba(240,244,238,.28), rgba(240,244,238,.28)), url('./atelier-hero.webp'); }
+.primary-action { background: var(--atelier-red); border-radius: 12px; box-shadow: 0 10px 22px rgba(93,58,46,.16); }
+.primary-action:active { background: #984a39; }
+.blend-tab.is-selected { background: var(--atelier-jade); border-color: var(--atelier-jade); color: #f7f5ee; }
+.ratio-range { accent-color: var(--atelier-red); }
+.knead-board { background: radial-gradient(circle at 35% 30%, #e1bd86, #b8794d 63%, #60382d); }
+.stamp-choice.is-selected { border-color: var(--atelier-red); background: #e7eee5; }
