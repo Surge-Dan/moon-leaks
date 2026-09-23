@@ -57,6 +57,16 @@
     return value - Math.floor(value);
   }
 
+  function photoFilter(skinId, bake) {
+    var fire = ' saturate(' + (0.78 + bake / 300).toFixed(2) + ') brightness(' + (1.15 - bake / 850).toFixed(2) + ')';
+    if (skinId === 'snow') return 'saturate(.33) brightness(1.16)';
+    if (skinId === 'tea') return 'sepia(.22) hue-rotate(32deg) saturate(.86)' + fire;
+    if (skinId === 'charcoal') return 'grayscale(.82) brightness(.67)' + fire;
+    if (skinId === 'osmanthus') return 'sepia(.31) saturate(1.14)' + fire;
+    if (skinId === 'purple') return 'sepia(.22) hue-rotate(238deg) saturate(.8)' + fire;
+    return fire;
+  }
+
   function getMooncakeGeometry(model, radius) {
     var data = model || {};
     var r = Math.max(1, Number(radius) || 1);
@@ -72,13 +82,13 @@
     };
   }
 
-  function drawStampPattern(ctx, cx, cy, radius, stampId, alpha) {
+  function drawStampPattern(ctx, cx, cy, radius, stampId, alpha, tone) {
     var r = radius * .47;
     var id = stampId || 'full-moon';
     ctx.save();
     ctx.globalAlpha = alpha == null ? .42 : alpha;
-    ctx.strokeStyle = 'rgba(73,34,20,.84)';
-    ctx.fillStyle = 'rgba(73,34,20,.64)';
+    ctx.strokeStyle = tone || 'rgba(73,34,20,.84)';
+    ctx.fillStyle = tone || 'rgba(73,34,20,.64)';
     ctx.lineWidth = Math.max(1, radius * .018);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -150,6 +160,20 @@
       for (var i = 0; i < 8; i += 1) petal(i * Math.PI * 2 / 8, r * .31, r * .17);
       ctx.beginPath(); ctx.arc(cx, cy, r * .1, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.restore();
+  }
+
+  function drawEmboss(ctx, cx, cy, radius, stampId, progress) {
+    var strength = clamp(progress == null ? 1 : progress, 0, 1);
+    if (strength < .015) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radius * .78, radius * .66, 0, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.globalCompositeOperation = 'multiply';
+    drawStampPattern(ctx, cx + 1.1, cy + 1.6, radius, stampId, .23 * strength, '#98704a');
+    ctx.globalCompositeOperation = 'soft-light';
+    drawStampPattern(ctx, cx - 1.1, cy - 1.4, radius, stampId, .68 * strength, '#ffe4ac');
     ctx.restore();
   }
 
@@ -240,24 +264,19 @@
     ctx.clearRect(0, 0, width, height);
     if (cut >= .98 && hasCutPhoto) {
       ctx.save();
-      if (skinId === 'snow') ctx.filter = 'saturate(.36) brightness(1.15)';
-      else if (skinId === 'tea') ctx.filter = 'sepia(.18) hue-rotate(29deg) saturate(.78)';
-      else if (skinId === 'charcoal') ctx.filter = 'grayscale(.75) brightness(.68)';
-      else if (skinId === 'osmanthus') ctx.filter = 'sepia(.34) saturate(1.1) brightness(1.06)';
-      else if (skinId === 'purple') ctx.filter = 'sepia(.22) hue-rotate(238deg) saturate(.72) brightness(.84)';
+      ctx.filter = photoFilter(skinId, bake);
       var imageX = cx - radius * 1.3;
       var imageY = cy - radius * 1.28;
       var imageSize = radius * 2.6;
       ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
       ctx.restore();
-      if (skinId && skinId !== 'amber') {
-        var faces = [
+      var faces = [
           [[443,259],[471,278],[474,357],[392,460],[296,568],[252,590],[252,515],[305,418],[375,311]],
           [[520,275],[554,303],[618,375],[676,476],[702,681],[665,680],[602,578],[534,490],[504,413],[503,329]],
         ];
-        ctx.save();
-        ctx.beginPath();
-        faces.forEach(function (points) {
+      faces.forEach(function (points, side) {
+          ctx.save();
+          ctx.beginPath();
           points.forEach(function (point, index) {
             var x = imageX + point[0] / 900 * imageSize;
             var y = imageY + point[1] / 900 * imageSize;
@@ -265,23 +284,29 @@
             else ctx.lineTo(x, y);
           });
           ctx.closePath();
-        });
-        ctx.clip();
-        ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
-        ctx.restore();
-      }
-      drawStampPattern(ctx, cx - radius * .35, cy - radius * .08, radius * .5, model && model.stampId, .38);
-      drawStampPattern(ctx, cx + radius * .35, cy - radius * .08, radius * .5, model && model.stampId, .38);
+          ctx.clip();
+          ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
+          ctx.globalCompositeOperation = 'multiply';
+          ctx.globalAlpha = .72;
+          ctx.fillStyle = filling;
+          ctx.fillRect(imageX, imageY, imageSize, imageSize);
+          ctx.globalAlpha = .24;
+          var faceLeft = imageX + (side ? 503 : 252) / 900 * imageSize;
+          var faceWidth = (side ? 199 : 222) / 900 * imageSize;
+          ctx.fillStyle = blendA;
+          ctx.fillRect(faceLeft, imageY, faceWidth * ratio, imageSize);
+          ctx.fillStyle = blendB;
+          ctx.fillRect(faceLeft + faceWidth * ratio, imageY, faceWidth * (1 - ratio), imageSize);
+          ctx.restore();
+      });
+      var stampStrength = model && model.stampProgress != null ? model.stampProgress : 1;
+      drawEmboss(ctx, cx - radius * .51, cy - radius * .47, radius * .56, model && model.stampId, stampStrength);
+      drawEmboss(ctx, cx + radius * .51, cy - radius * .47, radius * .56, model && model.stampId, stampStrength);
       return;
     }
     function drawPhoto(originX) {
       ctx.save();
-      if (skinId === 'snow') ctx.filter = 'saturate(.38) brightness(1.16)';
-      else if (skinId === 'tea') ctx.filter = 'sepia(.2) hue-rotate(30deg) saturate(.75)';
-      else if (skinId === 'charcoal') ctx.filter = 'grayscale(.8) brightness(.64)';
-      else if (skinId === 'osmanthus') ctx.filter = 'sepia(.35) saturate(1.12) brightness(1.04)';
-      else if (skinId === 'purple') ctx.filter = 'sepia(.22) hue-rotate(238deg) saturate(.74) brightness(.84)';
-      else ctx.filter = 'saturate(' + (0.83 + bake / 170).toFixed(2) + ') brightness(' + (1.12 - bake / 600).toFixed(2) + ')';
+      ctx.filter = photoFilter(skinId, bake);
       ctx.drawImage(cakeImage, originX - radius * 1.3, cy - radius * 1.32, radius * 2.6, radius * 2.6);
       ctx.restore();
     }
@@ -392,7 +417,7 @@
       if (hasPhoto) {
         drawPhoto(cx);
         drawSurfaceAccents(cx);
-        drawStampPattern(ctx, cx, cy - radius * .03, radius, model && model.stampId, .38);
+        drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model && model.stampId, model && model.stampProgress);
         return;
       }
       ctx.beginPath();
@@ -403,7 +428,7 @@
       ctx.shadowOffsetY = 8;
       ctx.fill();
       drawPattern(cx, 'full');
-      drawStampPattern(ctx, cx, cy - radius * .03, radius, model && model.stampId, .52);
+      drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model && model.stampId, model && model.stampProgress);
       return;
     }
 

@@ -181,7 +181,7 @@
 
   function stepMeta(label, progress, allowBack) {
     var back = allowBack === false ? '' : '<button class="back-action" data-action="back-step" aria-label="返回上一步">‹</button>';
-    return '<div class="topline">' + back + '<span class="brand-mark">月亮露馅了</span><span class="step-label">' + escapeHtml(label) + '</span><span class="topline-mark" aria-hidden="true">◌</span></div>' +
+    return '<div class="topline">' + back + '<span class="brand-mark">月亮露馅了</span><span class="step-label">' + escapeHtml(label) + '</span></div>' +
       '<div class="progress-line" role="progressbar" aria-label="制作进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progress + '"><span style="--progress:' + progress + '%"></span></div>';
   }
 
@@ -244,7 +244,7 @@
         '<span class="specimen-index">0' + (index + 1) + '</span><h3>' + skin.name + '</h3><p>' + skin.note + '</p></button>';
     }).join('');
     return '<section class="screen">' + stepMeta('01 / 选饼皮', 13) +
-      '<div class="screen-copy"><p class="eyebrow">先选外面这一层</p><h1 class="screen-title">要不先挑一层饼皮？</h1><p class="screen-note">轻点看纹理，长按看看它的手感</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">先选外面这一层</p><h1 class="screen-title">要不先挑一层饼皮？</h1><p class="screen-note">点一下选中，按住不放看细节</p></div>' +
       '<div class="stage"><div class="specimen-grid">' + cards + '</div></div>' +
       '<button class="primary-action" data-action="confirm-skin" ' + (state.skinId ? '' : 'disabled') + '>选好了，放主馅</button>' +
       '</section>';
@@ -257,9 +257,9 @@
     }).join('');
     return '<section class="screen">' + stepMeta('02 / 放主馅', 25) +
       '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title" data-role="filling-title">原来你喜欢' + filling.name + '呢</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
-      '<div class="stage"><div class="booklet" data-role="filling-booklet"><button class="booklet-arrow" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
-      '<article class="ingredient-leaf"><span class="specimen-index" data-role="filling-count">主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length + '</span><img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + (filling.asset || filling.id) + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div></article>' +
-      '<button class="booklet-arrow" data-action="next-filling" aria-label="下一个主馅">→</button></div></div>' +
+      '<div class="stage"><div class="booklet" data-role="filling-booklet"><article class="ingredient-leaf"><button class="booklet-arrow booklet-prev" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
+      '<img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + (filling.asset || filling.id) + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div>' +
+      '<button class="booklet-arrow booklet-next" data-action="next-filling" aria-label="下一个主馅">→</button></article></div></div>' +
       '<button class="primary-action" data-role="filling-confirm" data-action="confirm-filling">就放' + filling.name + '</button>' +
       '</section>';
   }
@@ -323,7 +323,7 @@
   function renderKnead() {
     return '<section class="screen">' + stepMeta('05 / 揉面团', 63) +
       '<div class="screen-copy"><p class="eyebrow">把散开的东西揉到一起</p><h1 class="screen-title">要不要再揉两圈？</h1><p class="screen-note">在案台上的面团上画圈，手感会告诉你什么时候刚好</p></div>' +
-      '<div class="stage"><div class="knead-board" data-role="knead-board" role="button" tabindex="0" aria-label="画圈揉月，按回车也可完成"><canvas id="knead-canvas" class="knead-canvas"></canvas></div></div>' +
+      '<div class="stage"><div class="knead-board" data-role="knead-board" role="button" tabindex="0" aria-label="在面团上画三圈，按回车也可完成"><canvas id="knead-canvas" class="knead-canvas"></canvas><span class="knead-feedback" data-role="knead-feedback" aria-live="polite">在面团上画三圈</span></div></div>' +
       '<div class="knead-meter" style="--meter:' + Math.round(state.kneadProgress * 100) + '%"><span></span></div>' +
       '<button class="primary-action" data-action="confirm-knead" ' + (state.kneadProgress >= 0.66 ? '' : 'disabled') + '>面团揉好了</button></section>';
   }
@@ -336,9 +336,9 @@
     var current = pickById(Content.stamps, state.stampId) || Content.stamps[0];
     var depth = clamp(state.stampHoldMs / 1600, 0, 1);
     return '<section class="screen">' + stepMeta('06 / 压花纹', 75) +
-      '<div class="screen-copy"><p class="eyebrow">轮到模具留下记号</p><h1 class="screen-title">挑一枚花纹，压进去</h1><p class="screen-note">花纹会留在这只月饼上。选好后，按住模具到刻度满格。</p></div>' +
+      '<div class="screen-copy"><p class="eyebrow">轮到模具留下记号</p><h1 class="screen-title">挑一枚花纹，压进去</h1><p class="screen-note">选好花纹，按住下面的月饼；松手就能看见压痕。</p></div>' +
       '<div class="stage" style="flex-direction:column"><div class="stamp-list">' + choices + '</div>' +
-      '<button class="press-pad stamp-' + current.id + '" data-action="press-stamp" aria-label="长按压模"><span class="press-mark stamp-preview stamp-' + current.id + '" style="--mark-opacity:' + (0.18 + depth * 0.62).toFixed(2) + '"></span><span class="press-pattern-label">' + current.name + '</span></button></div>' +
+      '<button class="press-pad stamp-' + current.id + '" data-action="press-stamp" aria-label="按住月饼压模"><canvas id="press-preview-canvas" class="press-cake" aria-hidden="true"></canvas><span class="press-ring" aria-hidden="true"></span><span class="press-instruction">按住月饼压花纹</span><span class="press-pattern-label">' + current.name + '</span></button></div>' +
       '<div class="press-meter" style="--meter:' + Math.round(depth * 100) + '%"><span></span></div>' +
       '<button class="primary-action" data-action="confirm-stamp" ' + (state.stampId && state.stampHoldMs >= 700 ? '' : 'disabled') + '>花纹压好了</button></section>';
   }
@@ -365,7 +365,7 @@
       '<div class="stage reveal-stage" data-role="reveal-stage" role="button" aria-label="横向划开月饼"><canvas id="reveal-canvas" class="mooncake-canvas"></canvas>' +
       '<div class="knife-track" aria-hidden="true" style="--cut:' + Math.round(state.cutProgress * 100) + '%"><span class="knife-track-line"></span><span class="knife-handle">✦</span></div>' +
       '<div class="cut-guide">沿着这条线划过去</div></div>' +
-      '<button class="quiet-action cut-fallback" data-action="cut-now">直接切开月饼 →</button>' +
+      '<button class="quiet-action cut-fallback" data-action="cut-now">划不动？点这里直接切</button>' +
       '</section>';
   }
 
@@ -485,15 +485,20 @@
     if (!state.result) buildResult();
     var pages = getResultPages();
     state.resultPage = clamp(state.resultPage, 0, pages.length - 1);
-    return '<section class="screen result-screen">' + stepMeta('结果 / ' + String(state.resultPage + 1).padStart(2, '0'), 100) +
+    var pageNames = ['结果', '切面', '手记', '配方', '同席'].concat(state.result.hiddenPages.map(function () { return '补记'; }));
+    var pageName = pageNames[state.resultPage] || '补记';
+    var pageGuide = pageNames.map(function (name, index) { return '<span class="' + (index === state.resultPage ? 'is-current' : '') + '">' + name + '</span>'; }).join('');
+    return '<section class="screen result-screen">' + stepMeta(pageName + ' / ' + String(state.resultPage + 1).padStart(2, '0'), 100) +
       '<div class="result-book">' + pages[state.resultPage] + '</div>' +
+      '<div class="result-guide" aria-label="结果册目录">' + pageGuide + '</div>' +
       '<nav class="book-nav" aria-label="结果册翻页"><button class="round-action" data-action="prev-result" aria-label="上一页" ' + (state.resultPage === 0 ? 'disabled' : '') + '>←</button>' +
-      '<span class="book-count">' + String(state.resultPage + 1).padStart(2, '0') + '/' + String(pages.length).padStart(2, '0') + (state.resultPage === 0 ? '·往后翻看配方' : '') + '</span>' +
+      '<span class="book-count">' + String(state.resultPage + 1).padStart(2, '0') + '/' + String(pages.length).padStart(2, '0') + '</span>' +
       '<button class="round-action" data-action="next-result" aria-label="下一页" ' + (state.resultPage === pages.length - 1 ? 'disabled' : '') + '>→</button></nav>' +
       (state.resultPage === pages.length - 1 ? '<button class="quiet-action" data-action="restart">再做一轮月亮</button>' : '') +
       '</section>';
   }
 
+  var lastAnimatedStep = null;
   function render() {
     if (STEPS.indexOf(state.step) === -1) state.step = 'intro';
     var views = {
@@ -511,14 +516,14 @@
     };
     app.innerHTML = views[state.step]();
     setupCurrentStep();
-    animateStep();
+    if (lastAnimatedStep !== state.step) animateStep();
+    lastAnimatedStep = state.step;
   }
 
   function animateStep() {
     var gsap = root.gsap;
     var screen = app.querySelector('.screen');
     if (!gsap || !screen || (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-    var top = screen.querySelector('.topline');
     var copy = screen.querySelectorAll('.screen-copy > *');
     var stage = screen.querySelector('.stage');
     var action = screen.querySelector('.primary-action');
@@ -526,10 +531,9 @@
     // Keep the layout immediately discoverable for touch and accessibility
     // checks. A short vertical settle gives the page a crafted transition
     // without toggling visibility or causing a flash between steps.
-    if (top) timeline.fromTo(top, { y: -5 }, { y: 0 });
-    if (copy.length) timeline.fromTo(copy, { y: 9 }, { y: 0, stagger: .045 }, '-=.2');
-    if (stage) timeline.fromTo(stage, { y: 10 }, { y: 0 }, '-=.2');
-    if (action) timeline.fromTo(action, { y: 7 }, { y: 0 }, '-=.18');
+    if (copy.length) timeline.fromTo(copy, { y: 7 }, { y: 0, stagger: .04 });
+    if (stage) timeline.fromTo(stage, { y: 8 }, { y: 0 }, '-=.17');
+    if (action) timeline.fromTo(action, { y: 5 }, { y: 0 }, '-=.12');
   }
 
   function setupIntro() {
@@ -545,7 +549,8 @@
     app.querySelectorAll('.specimen').forEach(function (specimen) {
       var timer = 0;
       specimen.addEventListener('pointerdown', function () {
-        timer = root.setTimeout(function () { specimen.classList.add('is-observing'); }, 420);
+        specimen.dataset.longpress = '';
+        timer = root.setTimeout(function () { specimen.dataset.longpress = 'true'; specimen.classList.add('is-observing'); }, 420);
       });
       ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (eventName) {
         specimen.addEventListener(eventName, function () {
@@ -628,7 +633,7 @@
       var radius = width * (.25 + ((index * 17) % 10) / 100);
       var x = width / 2 + Math.cos(angle) * radius;
       var y = width / 2 + Math.sin(angle) * radius;
-      ctx.fillStyle = index % 3 === 0 ? '#9b512f' : index % 3 === 1 ? '#d9b977' : '#78836d';
+      ctx.fillStyle = index % 3 === 0 ? '#9b512f' : index % 3 === 1 ? '#d9b977' : '#b27b4d';
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(angle);
@@ -641,6 +646,9 @@
     function updateKneadMeter() {
       var meter = app.querySelector('.knead-meter');
       meter.style.setProperty('--meter', Math.round(state.kneadProgress * 100) + '%');
+      board.style.setProperty('--smooth', state.kneadProgress.toFixed(2));
+      var feedback = app.querySelector('[data-role="knead-feedback"]');
+      if (feedback) feedback.textContent = state.kneadProgress >= .66 ? '揉好了' : state.kneadProgress >= .42 ? '快好了，再揉一圈' : state.kneadProgress >= .16 ? '继续画圈' : '在面团上画三圈';
       var button = app.querySelector('[data-action="confirm-knead"]');
       if (state.kneadProgress >= .66) button.disabled = false;
     }
@@ -700,31 +708,36 @@
     var meter = app.querySelector('.press-meter');
     var button = app.querySelector('[data-action="confirm-stamp"]');
     if (!pad) return;
+    var preview = app.querySelector('#press-preview-canvas');
+    function drawPreview(depth) {
+      if (preview) Visuals.drawMooncake(preview, Object.assign({}, resultModel(), { stampProgress: state.stampId ? .38 + depth * .62 : 0 }), 0);
+    }
+    drawPreview(clamp(state.stampHoldMs / 1600, 0, 1));
     var started = 0;
+    var holdBase = 0;
     var raf = 0;
     function tick() {
       if (!started) return;
       var elapsed = performance.now() - started;
-      var total = Math.max(state.stampHoldMs, elapsed);
+      var total = holdBase + elapsed;
       var depth = clamp(total / 1600, 0, 1);
       meter.style.setProperty('--meter', Math.round(depth * 100) + '%');
-      var mark = pad.querySelector('.press-mark');
-      mark.style.setProperty('--mark-opacity', (0.18 + depth * .62).toFixed(2));
+      pad.style.setProperty('--press-progress', Math.round(depth * 100) + '%');
+      drawPreview(depth);
       raf = root.requestAnimationFrame(tick);
     }
     function endPress() {
       if (!started) return;
-      state.stampHoldMs = Math.max(state.stampHoldMs, performance.now() - started);
+      state.stampHoldMs = holdBase + performance.now() - started;
       state.stampReleases += 1;
       started = 0;
       root.cancelAnimationFrame(raf);
       pad.classList.remove('is-pressing');
-      var finalDepth = clamp(state.stampHoldMs / 1600, 0, 1);
-      var finalMark = pad.querySelector('.press-mark');
-      if (finalMark) {
-        finalMark.style.setProperty('--mark-opacity', (0.18 + finalDepth * .72).toFixed(2));
-        finalMark.classList.toggle('is-imprinted', state.stampHoldMs >= 700);
+      if (root.gsap && !(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        root.gsap.to(pad.querySelector('.press-cake'), { scale: 1, duration: .28, ease: 'back.out(1.8)', overwrite: true });
       }
+      var finalDepth = clamp(state.stampHoldMs / 1600, 0, 1);
+      drawPreview(finalDepth);
       pad.classList.toggle('is-imprinted', state.stampHoldMs >= 700);
       if (state.stampId && state.stampHoldMs >= 700) {
         button.disabled = false;
@@ -741,7 +754,11 @@
       }
       pad.setPointerCapture(event.pointerId);
       started = performance.now();
+      holdBase = state.stampHoldMs;
       pad.classList.add('is-pressing');
+      if (root.gsap && !(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        root.gsap.to(pad.querySelector('.press-cake'), { scale: .93, duration: .26, ease: 'power2.out', overwrite: true });
+      }
       tick();
     });
     pad.addEventListener('pointerup', endPress);
@@ -752,11 +769,8 @@
         state.stampHoldMs = Math.max(state.stampHoldMs, 900);
         state.stampReleases += 1;
         meter.style.setProperty('--meter', '56%');
-        var mark = pad.querySelector('.press-mark');
-        if (mark) {
-          mark.style.setProperty('--mark-opacity', '.62');
-          mark.classList.add('is-imprinted');
-        }
+        pad.style.setProperty('--press-progress', '56%');
+        drawPreview(.56);
         pad.classList.add('is-imprinted');
         button.disabled = false;
       }
@@ -918,25 +932,31 @@
     updateFillingView();
   }
 
+  var fillingSwapToken = 0;
   function updateFillingView() {
     var filling = Content.fillings[state.fillingIndex];
     var photo = app.querySelector('[data-role="filling-photo"]');
     if (!photo) return;
-    photo.classList.add('is-changing');
-    root.setTimeout(function () {
-      if (!photo.isConnected) return;
-      photo.src = './assets/filling-' + (filling.asset || filling.id) + '.webp';
+    var token = ++fillingSwapToken;
+    var nextSource = './assets/filling-' + (filling.asset || filling.id) + '.webp';
+    var nextPhoto = new Image();
+    function swapPhoto() {
+      if (token !== fillingSwapToken || !photo.isConnected) return;
+      photo.src = nextSource;
       photo.alt = filling.name;
-      photo.classList.remove('is-changing');
-    }, 90);
+      if (root.gsap && !(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+        root.gsap.fromTo(photo, { scale: .97 }, { scale: 1, duration: .22, ease: 'power2.out', overwrite: true });
+      }
+    }
+    nextPhoto.onload = swapPhoto;
+    nextPhoto.src = nextSource;
+    if (nextPhoto.complete && nextPhoto.naturalWidth) swapPhoto();
     var title = app.querySelector('[data-role="filling-title"]');
-    var count = app.querySelector('[data-role="filling-count"]');
     var name = app.querySelector('[data-role="filling-name"]');
     var note = app.querySelector('[data-role="filling-note"]');
     var confirm = app.querySelector('[data-role="filling-confirm"]');
     var dots = app.querySelector('[data-role="filling-dots"]');
     if (title) title.textContent = '原来你喜欢' + filling.name + '呢';
-    if (count) count.textContent = '主馅0' + (state.fillingIndex + 1) + '/0' + Content.fillings.length;
     if (name) name.textContent = filling.name;
     if (note) note.textContent = filling.note;
     if (confirm) confirm.textContent = '就放' + filling.name;
@@ -1073,13 +1093,15 @@
     if (pad && current) {
       Array.prototype.slice.call(pad.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0) pad.classList.remove(name); });
       pad.classList.add('stamp-' + current.id);
-      var mark = pad.querySelector('.press-mark');
+      pad.classList.remove('is-imprinted');
+      pad.style.setProperty('--press-progress', '0%');
+      var meter = app.querySelector('.press-meter');
+      if (meter) meter.style.setProperty('--meter', '0%');
+      var confirm = app.querySelector('[data-action="confirm-stamp"]');
+      if (confirm) confirm.disabled = true;
       var label = pad.querySelector('.press-pattern-label');
-      if (mark) {
-        Array.prototype.slice.call(mark.classList).forEach(function (name) { if (name.indexOf('stamp-') === 0 && name !== 'stamp-preview') mark.classList.remove(name); });
-        mark.classList.add('stamp-preview');
-        mark.classList.add('stamp-' + current.id);
-      }
+      var preview = app.querySelector('#press-preview-canvas');
+      if (preview) Visuals.drawMooncake(preview, Object.assign({}, resultModel(), { stampProgress: .38 }), 0);
       if (label) label.textContent = current.name;
     }
   }
@@ -1189,6 +1211,11 @@
   app.addEventListener('click', function (event) {
     var control = event.target.closest('[data-action]');
     if (!control || control.disabled) return;
+    if (control.dataset.action === 'pick-skin' && control.dataset.longpress === 'true') {
+      control.dataset.longpress = '';
+      event.preventDefault();
+      return;
+    }
     var action = control.dataset.action;
     var handlers = {
       'pick-skin': function () { chooseSkin(control.dataset.id); },

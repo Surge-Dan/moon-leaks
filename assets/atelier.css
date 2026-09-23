@@ -278,3 +278,57 @@ body { color: var(--atelier-ink); }
 .ratio-range { accent-color: var(--atelier-red); }
 .knead-board { background: radial-gradient(circle at 35% 30%, #e1bd86, #b8794d 63%, #60382d); }
 .stamp-choice.is-selected { border-color: var(--atelier-red); background: #e7eee5; }
+
+/* 平台原生返回/分享位于状态栏下方，整套页头固定避开其点击区。 */
+.screen { padding-top: calc(88px + var(--safe-top)); }
+.topline { grid-template-columns: 36px 1fr auto; }
+.step-label { grid-column: 3; }
+.progress-line { margin-left: 44px; }
+button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline-color: var(--atelier-red); }
+.intro-screen .atelier-photo { margin-top: 17px; }
+.intro-screen .atelier-intro { gap: 19px; }
+.intro-screen .atelier-actions { margin-top: 9px; }
+
+/* 主馅的翻页控件收进卡片，照片载入前保留旧图。 */
+.booklet { display: block; min-height: 0; }
+.ingredient-leaf { min-height: 327px; padding-inline: 50px; }
+.booklet-arrow { position: absolute; z-index: 3; top: 43%; width: 40px; height: 40px; font-size: 19px; transform: translateY(-50%); }
+.booklet-prev { left: 8px; }
+.booklet-next { right: 8px; }
+.ingredient-photo { width: min(53vw, 210px); height: min(53vw, 210px); margin-top: 1px; animation: none; }
+.ingredient-photo.is-changing { opacity: 1; }
+
+/* 两种味道确实要能在剖面上分开看见。 */
+.blend-half { opacity: .74; mix-blend-mode: multiply; }
+.blend-half.left { background: var(--blend-left); }
+.blend-half.right { background: var(--blend-right); }
+.blend-seam { width: 3px; background: #fff4da; box-shadow: 0 0 0 1px rgba(65,38,23,.45), 0 0 10px rgba(255,232,177,.8); }
+
+/* 整个案台只用赭红、面粉金与木色反馈，去掉孤立的蓝圈与蓝条。 */
+.knead-meter span, .press-meter span { background: linear-gradient(90deg, #b85b45, #c58c50); }
+.falling-choice.is-caught .falling-object { outline: none; }
+.knead-board::after { position: absolute; inset: 16%; border-radius: 50%; background: radial-gradient(circle at 34% 27%, rgba(255,246,211,.35), rgba(244,210,148,.15) 45%, transparent 72%); opacity: var(--smooth, 0); content: ""; pointer-events: none; }
+.knead-feedback { position: absolute; z-index: 3; left: 50%; top: 50%; min-width: 112px; padding: 7px 12px; border: 1px solid rgba(110,69,39,.2); border-radius: 99px; background: rgba(251,239,208,.88); color: #633d2c; font-size: 12px; font-weight: 650; text-align: center; white-space: nowrap; transform: translate(-50%,-50%); pointer-events: none; }
+
+/* 压模时直接按在月饼上；环形刻度跟着模具走。 */
+.press-pad { width: min(78vw, 300px); aspect-ratio: 1.18; display: grid; place-items: center; background-image: linear-gradient(rgba(83,46,26,.17),rgba(83,46,26,.22)),url('./ingredients-flatlay.webp'); background-size: cover; background-position: 25% 81%; }
+.press-cake { position: relative; z-index: 1; width: min(58vw, 222px); height: min(58vw, 222px); display: block; pointer-events: none; }
+.press-ring { position: absolute; z-index: 2; top: 50%; left: 50%; width: min(61vw, 235px); height: min(61vw, 235px); border-radius: 50%; background: conic-gradient(var(--atelier-red) var(--press-progress, 0%), rgba(255,237,197,.55) 0); transform: translate(-50%,-50%); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 0); pointer-events: none; }
+.press-instruction { position: absolute; z-index: 3; left: 50%; bottom: 8px; padding: 3px 9px; border-radius: 99px; background: rgba(48,30,21,.7); color: #f8e7c4; font-size: 10px; white-space: nowrap; transform: translateX(-50%); pointer-events: none; }
+.press-pattern-label { z-index: 3; top: 9px; right: 12px; bottom: auto; }
+.press-pad.is-pressing { transform: none; }
+
+.night-step .topline, .night-step .brand-mark, .night-step .step-label { color: #e9d09a; }
+.night-step .back-action { border-color: rgba(224,189,118,.5); background: rgba(205,170,102,.08); color: #e9d09a; }
+.night-step .cut-fallback { display: block; width: max-content; min-height: 34px; margin: 7px 0 0 auto; padding: 4px 1px; border: 0; border-bottom: 1px solid rgba(223,193,127,.6); border-radius: 0; background: transparent; box-shadow: none; color: #dfc388; font-size: 11px; }
+.result-guide { display: flex; justify-content: center; gap: 8px; padding: 11px 0 0; color: #9a8b79; font-size: 9px; }
+.result-guide span { white-space: nowrap; }
+.result-guide .is-current { color: var(--atelier-red); font-weight: 800; }
+.book-nav { padding-top: 7px; }
+
+@media (max-width: 350px) {
+  .screen { padding-top: calc(78px + var(--safe-top)); }
+  .ingredient-leaf { padding-inline: 43px; }
+  .ingredient-photo { width: min(51vw, 170px); height: min(51vw, 170px); }
+  .result-guide { gap: 5px; font-size: 8px; }
+}
