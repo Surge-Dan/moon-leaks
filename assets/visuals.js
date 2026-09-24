@@ -27,7 +27,9 @@
     image.src = source;
     return { image: image, ready: ready };
   }
-  var wholeAsset = localImage('./assets/mooncake-whole.webp');
+  // The blank top is intentional: the chosen mould, not a baked-in stock motif,
+  // becomes the defining mark of this mooncake.
+  var wholeAsset = localImage('./assets/mooncake-blank-v2.webp');
   var cutAssets = {};
   ['lotus', 'sesame', 'osmanthus', 'custard', 'coffee', 'chestnut', 'redbean', 'matcha'].forEach(function (id) {
     cutAssets[id] = localImage('./assets/mooncake-cut-' + id + '.webp');
@@ -171,9 +173,11 @@
     ctx.ellipse(cx, cy, radius * .78, radius * .66, 0, 0, Math.PI * 2);
     ctx.clip();
     ctx.globalCompositeOperation = 'multiply';
-    drawStampPattern(ctx, cx + 1.1, cy + 1.6, radius, stampId, .23 * strength, '#98704a');
+    // The raised mark needs enough scale and shadow to read on a real pastry,
+    // while remaining clipped to the baked top rather than pasted over it.
+    drawStampPattern(ctx, cx + 1.2, cy + 1.8, radius * 1.25, stampId, .32 * strength, '#805033');
     ctx.globalCompositeOperation = 'soft-light';
-    drawStampPattern(ctx, cx - 1.1, cy - 1.4, radius, stampId, .68 * strength, '#ffe4ac');
+    drawStampPattern(ctx, cx - 1.1, cy - 1.5, radius * 1.25, stampId, .74 * strength, '#ffe4ac');
     ctx.restore();
   }
 
