@@ -49,6 +49,13 @@
     return typeof id === 'string' && items.some(function (item) { return item.id === id; });
   }
 
+  // These later additions use real transparent cutouts. Keep their recipe id
+  // unchanged so every cut-mooncake render still resolves to its matching fill.
+  function fillingPhotoAsset(filling) {
+    var cutoutAssets = { chestnut: 'chestnut-v2', redbean: 'redbean-v2', matcha: 'matcha-v2' };
+    return cutoutAssets[filling.id] || filling.asset || filling.id;
+  }
+
   function hasValidFate(fate) {
     return Boolean(fate) && ['left', 'right'].every(function (side) {
       return fate[side] && typeof fate[side].label === 'string' && fate[side].deltas && typeof fate[side].deltas === 'object';
@@ -107,7 +114,7 @@
     }
     result.model.skinId = snapshot.skinId;
     result.model.fillingId = snapshot.fillingId;
-    result.model.fillingAsset = snapshot.fillingAsset || ((pickById(Content.fillings, snapshot.fillingId) || {}).asset) || snapshot.fillingId;
+    result.model.fillingAsset = snapshot.fillingId;
     result.model.stampId = snapshot.stampId;
     if (!Array.isArray(result.notes)) {
       result.notes = [
@@ -258,7 +265,7 @@
     return '<section class="screen">' + stepMeta('02 / 放主馅', 25) +
       '<div class="screen-copy"><p class="eyebrow">打开馅料匣</p><h1 class="screen-title" data-role="filling-title">原来你喜欢' + filling.name + '呢</h1><p class="screen-note">左右翻一翻，找一口最想留在里面的</p></div>' +
       '<div class="stage"><div class="booklet" data-role="filling-booklet"><article class="ingredient-leaf"><button class="booklet-arrow booklet-prev" data-action="prev-filling" aria-label="上一个主馅">←</button>' +
-      '<img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + (filling.asset || filling.id) + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div>' +
+      '<img class="ingredient-photo" data-role="filling-photo" src="./assets/filling-' + fillingPhotoAsset(filling) + '.webp" alt="' + filling.name + '"><h3 data-role="filling-name">' + filling.name + '</h3><p data-role="filling-note">' + filling.note + '</p><div class="page-dots" data-role="filling-dots">' + dots + '</div>' +
       '<button class="booklet-arrow booklet-next" data-action="next-filling" aria-label="下一个主馅">→</button></article></div></div>' +
       '<button class="primary-action" data-role="filling-confirm" data-action="confirm-filling">就放' + filling.name + '</button>' +
       '</section>';
@@ -272,7 +279,7 @@
     return '<section class="screen">' + stepMeta('03 / 调夹心', 38) +
       '<div class="screen-copy"><p class="eyebrow">两种味道配在一起</p><h1 class="screen-title">这一口，想偏向哪边？</h1><p class="screen-note">拖动月饼剖面里的分界线，调到你觉得刚刚好</p></div>' +
       '<div class="stage"><div class="blend-layout"><div class="blend-tabs">' + tabs + '</div>' +
-      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '"><img class="blend-photo" src="./assets/mooncake-cut-' + ((pickById(Content.fillings, state.fillingId) || {}).asset || state.fillingId || 'lotus') + '.webp" alt="月饼剖面参考图">' +
+      '<div class="blend-orb" data-role="blend-orb" style="--ratio:' + state.ratio + '%;--blend-left:' + blend.colors[0] + ';--blend-right:' + blend.colors[1] + '"><img class="blend-photo" src="./assets/mooncake-cut-' + ((pickById(Content.fillings, state.fillingId) || {}).id || state.fillingId || 'lotus') + '.webp" alt="月饼剖面参考图">' +
       '<span class="blend-half left"></span><span class="blend-half right"></span><span class="blend-seam"></span></div>' +
       '<div class="ratio-readout"><span data-role="ratio-left">' + state.ratio + '</span> : <span data-role="ratio-right">' + (100 - state.ratio) + '</span></div>' +
       '<input class="ratio-range" data-role="ratio-range" aria-label="夹心比例" type="range" min="10" max="90" value="' + state.ratio + '"></div></div>' +
@@ -410,7 +417,7 @@
         bakeLevel: state.bakeLevel,
         skinId: state.skinId,
         fillingId: state.fillingId,
-        fillingAsset: filling.asset || filling.id,
+        fillingAsset: filling.id,
         stampId: stamp.id,
         fillingColor: filling.color,
         blendColors: blend.colors,
@@ -782,7 +789,7 @@
     var blend = Content.blends[state.blendIndex];
     var traits = state.result ? state.result.traits : state.session.traits;
     return {
-      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, fillingAsset: filling.asset || filling.id, stampId: state.stampId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
+      bakeLevel: state.bakeLevel, skinId: state.skinId, fillingId: state.fillingId, fillingAsset: filling.id, stampId: state.stampId, fillingColor: filling.color, blendColors: blend.colors, ratio: state.ratio,
       emotion: traits.emotion, boundary: traits.boundary, control: traits.control, intuition: traits.intuition,
     };
   }
@@ -938,7 +945,7 @@
     var photo = app.querySelector('[data-role="filling-photo"]');
     if (!photo) return;
     var token = ++fillingSwapToken;
-    var nextSource = './assets/filling-' + (filling.asset || filling.id) + '.webp';
+    var nextSource = './assets/filling-' + fillingPhotoAsset(filling) + '.webp';
     var nextPhoto = new Image();
     function swapPhoto() {
       if (token !== fillingSwapToken || !photo.isConnected) return;
@@ -978,7 +985,7 @@
     }
     if (photo) {
       var filling = pickById(Content.fillings, state.fillingId) || Content.fillings[0];
-      photo.src = './assets/mooncake-cut-' + (filling.asset || filling.id || 'lotus') + '.webp';
+      photo.src = './assets/mooncake-cut-' + (filling.id || 'lotus') + '.webp';
     }
   }
 
@@ -1137,7 +1144,7 @@
       choices: state.session.choices,
       snapshot: {
         skinId: state.skinId, fillingIndex: state.fillingIndex, fillingId: state.fillingId,
-        fillingAsset: ((pickById(Content.fillings, state.fillingId) || {}).asset) || state.fillingId,
+        fillingAsset: state.fillingId,
         blendIndex: state.blendIndex, ratio: state.ratio, ratioAdjustments: state.ratioAdjustments,
         surpriseId: state.surpriseId, fate: state.fate, fateChoice: state.fateChoice,
         stampId: state.stampId, bakeLevel: state.bakeLevel,

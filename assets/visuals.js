@@ -165,13 +165,17 @@
     ctx.restore();
   }
 
-  function drawEmboss(ctx, cx, cy, radius, stampId, progress) {
+  function drawEmboss(ctx, cx, cy, radius, stampId, progress, clipSurface) {
     var strength = clamp(progress == null ? 1 : progress, 0, 1);
     if (strength < .015) return;
     ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, radius * .78, radius * .66, 0, 0, Math.PI * 2);
-    ctx.clip();
+    if (clipSurface) {
+      clipSurface(ctx);
+    } else {
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, radius * .78, radius * .66, 0, 0, Math.PI * 2);
+      ctx.clip();
+    }
     ctx.globalCompositeOperation = 'multiply';
     // The raised mark needs enough scale and shadow to read on a real pastry,
     // while remaining clipped to the baked top rather than pasted over it.
@@ -179,6 +183,24 @@
     ctx.globalCompositeOperation = 'soft-light';
     drawStampPattern(ctx, cx - 1.1, cy - 1.5, radius * 1.25, stampId, .74 * strength, '#ffe4ac');
     ctx.restore();
+  }
+
+  // A cut mooncake no longer receives two miniature, independently centred
+  // stamps. Instead, the selected mould is drawn once at full scale and only
+  // revealed through the two baked top surfaces. The split then continues the
+  // same mould across the gap and can never land on the exposed filling.
+  function drawCutSurfaceEmboss(ctx, cx, cy, radius, stampId, progress) {
+    var patternY = cy - radius * .63;
+    var patternRadius = radius * .9;
+    function topHalf(side) {
+      return function (context) {
+        context.beginPath();
+        context.ellipse(cx + side * radius * .45, cy - radius * .61, radius * .51, radius * .39, 0, 0, Math.PI * 2);
+        context.clip();
+      };
+    }
+    drawEmboss(ctx, cx, patternY, patternRadius, stampId, progress, topHalf(-1));
+    drawEmboss(ctx, cx, patternY, patternRadius, stampId, progress, topHalf(1));
   }
 
   function drawMoon(canvas, fullness) {
@@ -304,8 +326,7 @@
           ctx.restore();
       });
       var stampStrength = model && model.stampProgress != null ? model.stampProgress : 1;
-      drawEmboss(ctx, cx - radius * .51, cy - radius * .47, radius * .56, model && model.stampId, stampStrength);
-      drawEmboss(ctx, cx + radius * .51, cy - radius * .47, radius * .56, model && model.stampId, stampStrength);
+      drawCutSurfaceEmboss(ctx, cx, cy, radius, model && model.stampId, stampStrength);
       return;
     }
     function drawPhoto(originX) {

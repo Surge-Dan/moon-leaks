@@ -38,8 +38,23 @@ def main():
             page.locator('[data-action="next-filling"]').click()
             assert abs(page.locator(".topline").bounding_box()["y"] - header_y) < 1
             assert page.locator(".ingredient-photo").is_visible()
-        assets = [ROOT / "assets" / f"filling-{name}.webp" for name in ("chestnut", "redbean", "matcha")]
+        assets = [ROOT / "assets" / f"filling-{name}-v2.webp" for name in ("chestnut", "redbean", "matcha")]
         assert len({hashlib.sha256(path.read_bytes()).hexdigest() for path in assets}) == 3
+        alpha_corners = page.evaluate("""async () => {
+          const sources = ['chestnut-v2', 'redbean-v2', 'matcha-v2'];
+          return Promise.all(sources.map(async (name) => {
+            const image = new Image();
+            image.src = `./assets/filling-${name}.webp`;
+            await image.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+            canvas.getContext('2d').drawImage(image, 0, 0);
+            const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+            const points = [3, (canvas.width - 1) * 4 + 3, ((canvas.height - 1) * canvas.width) * 4 + 3, (canvas.width * canvas.height - 1) * 4 + 3];
+            return points.every(index => pixels[index] === 0);
+          }));
+        }""")
+        assert all(alpha_corners), "新增馅料必须保持透明背景"
         page.locator('[data-action="confirm-filling"]').click()
         page.locator('[data-action="confirm-blend"]').click()
         page.locator('[data-action="dodge-surprise"]').click()
