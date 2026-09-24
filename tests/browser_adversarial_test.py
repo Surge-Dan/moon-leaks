@@ -18,7 +18,7 @@ def main():
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(URL)
         page.wait_for_load_state("networkidle")
-        assert page.locator(".topline").bounding_box()["y"] >= 80
+        assert page.locator(".topline").bounding_box()["y"] >= 54
         assert page.locator(".atelier-photo").bounding_box()["y"] > page.locator(".topline").bounding_box()["y"] + 40
         assert page.locator(".topline-mark").count() == 0
 

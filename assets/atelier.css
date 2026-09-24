@@ -301,8 +301,8 @@ body { color: var(--atelier-ink); }
 .knead-board { background: radial-gradient(circle at 35% 30%, #e1bd86, #b8794d 63%, #60382d); }
 .stamp-choice.is-selected { border-color: var(--atelier-red); background: #e7eee5; }
 
-/* 平台原生返回/分享位于状态栏下方，整套页头固定避开其点击区。 */
-.screen { padding-top: calc(88px + var(--safe-top)); }
+/* 给平台原生返回/分享留出触达区，同时让首屏在默认视口回到视觉中段。 */
+.screen { padding-top: calc(58px + var(--safe-top)); }
 .topline { grid-template-columns: 36px 1fr auto; }
 .step-label { grid-column: 3; }
 .progress-line { margin-left: 44px; }
@@ -349,7 +349,7 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline-co
 .book-nav { padding-top: 7px; }
 
 @media (max-width: 350px) {
-  .screen { padding-top: calc(78px + var(--safe-top)); }
+  .screen { padding-top: calc(52px + var(--safe-top)); }
   .ingredient-leaf { padding-inline: 43px; }
   .ingredient-photo { width: min(51vw, 170px); height: min(51vw, 170px); }
   .result-guide { gap: 5px; font-size: 8px; }
