@@ -348,6 +348,46 @@ button:focus-visible, [tabindex]:focus-visible, input:focus-visible { outline-co
 .result-guide .is-current { color: var(--atelier-red); font-weight: 800; }
 .book-nav { padding-top: 7px; }
 
+/* 结果册是固定画幅：翻页不改高度、不触发页面滚动，内容在卡内压成一屏阅读节奏。 */
+.result-screen { height: 100dvh; min-height: 100dvh; max-height: 100dvh; overflow: hidden; }
+.result-screen .progress-line { flex: 0 0 auto; }
+.result-book { flex: 0 0 calc(100dvh - 226px); height: calc(100dvh - 226px); min-height: 0; margin-top: 10px; }
+.result-page { height: 100%; min-height: 0; padding: 13px 15px; overflow: hidden; }
+.result-page .eyebrow { margin-bottom: 4px; font-size: 9px; }
+.result-page .screen-title { margin: 0 0 5px; font-size: clamp(24px, 7.1vw, 31px); line-height: 1.15; }
+.result-hero .result-canvas { width: min(49vw, 190px); height: min(49vw, 190px); margin: -3px auto 0; }
+.result-kicker { margin: 0 0 2px; font-size: 9px; }
+.result-recipe { margin: 0 auto 2px; font-size: 10px; }
+.result-name { margin: 3px auto 5px; font-size: clamp(25px, 7.2vw, 31px); }
+.result-line { font-size: 12px; line-height: 1.5; }
+.result-actions { margin-top: 10px; }
+.result-actions button { min-height: 40px; font-size: 11px; }
+.anatomy .result-canvas { width: min(47vw, 185px); height: min(47vw, 185px); margin: 0 auto 6px; }
+.anatomy-metrics { gap: 6px; }
+.anatomy-label, .anatomy-label.one, .anatomy-label.two, .anatomy-label.three, .anatomy-label.four { min-height: 57px; padding: 7px 8px; font-size: 9px; line-height: 1.35; }
+.anatomy-label b { margin-bottom: 1px; font-size: 12px; }
+.result-page .screen-note { margin: 0; font-size: 11px; line-height: 1.45; }
+.evidence-list { margin: 8px 0 0; }
+.evidence-list li { margin-bottom: 7px; padding: 0 0 7px 28px; font-size: 12px; line-height: 1.42; }
+.evidence-list li::before { font-size: 9px; }
+.recipe-list { margin-top: 6px; }
+.recipe-row { grid-template-columns: 64px 1fr; gap: 8px; padding: 7px 0; }
+.recipe-row span { font-size: 9px; }
+.recipe-row strong { font-size: 13px; line-height: 1.25; }
+.relationship-block { margin-top: 7px; padding: 0 0 7px; }
+.relationship-block h3 { margin-bottom: 3px; font-size: 9px; }
+.relationship-block p, .essay { font-size: 12px; line-height: 1.42; }
+.essay { margin-top: 8px; }
+.hidden-page { min-height: 0; padding: 18px 16px; }
+.hidden-page h2 { margin: 34px 0 12px; font-size: 25px; }
+.hidden-page p { font-size: 13px; line-height: 1.55; }
+.hidden-page::after { right: 16px; bottom: 12px; font-size: 18px; }
+.result-guide { flex: 0 0 auto; gap: 6px; padding: 6px 0 0; font-size: 8px; }
+.book-nav { flex: 0 0 auto; min-height: 46px; padding-top: 5px; }
+.book-nav .round-action { width: 40px; height: 40px; }
+.result-restart-slot { flex: 0 0 30px; display: grid; place-items: center; }
+.result-restart-slot .quiet-action[data-action="restart"] { min-height: 28px; margin: 0; font-size: 10px; }
+
 @media (max-width: 350px) {
   .screen { padding-top: calc(52px + var(--safe-top)); }
   .ingredient-leaf { padding-inline: 43px; }

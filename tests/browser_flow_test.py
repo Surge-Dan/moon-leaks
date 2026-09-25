@@ -141,6 +141,16 @@ def main():
         page.wait_for_selector(".result-name")
         page.screenshot(path=str(SCREENSHOTS / "02-result.png"), full_page=True)
 
+        nav_y = page.locator(".book-nav").bounding_box()["y"]
+        layout = page.evaluate("""() => ({
+          viewport: innerHeight,
+          document: document.documentElement.scrollHeight,
+          pageClient: document.querySelector('.result-page').clientHeight,
+          pageScroll: document.querySelector('.result-page').scrollHeight
+        })""")
+        assert layout["document"] <= layout["viewport"] + 1, layout
+        assert layout["pageScroll"] <= layout["pageClient"] + 1, layout
+
         page.locator('[data-action="open-share"]').click()
         page.wait_for_selector(".share-preview")
         assert page.locator(".share-preview").get_attribute("src").startswith("data:image/png;base64,")
@@ -152,6 +162,16 @@ def main():
         while page.locator('[data-action="next-result"]').is_enabled():
             page.locator('[data-action="next-result"]').click()
             visited += 1
+            current_nav_y = page.locator(".book-nav").bounding_box()["y"]
+            assert abs(current_nav_y - nav_y) < 1, (nav_y, current_nav_y, visited)
+            layout = page.evaluate("""() => ({
+              viewport: innerHeight,
+              document: document.documentElement.scrollHeight,
+              pageClient: document.querySelector('.result-page').clientHeight,
+              pageScroll: document.querySelector('.result-page').scrollHeight
+            })""")
+            assert layout["document"] <= layout["viewport"] + 1, (visited, layout)
+            assert layout["pageScroll"] <= layout["pageClient"] + 1, (visited, layout)
             if visited == 2:
                 page.wait_for_timeout(420)
                 title_box = page.locator('.anatomy .screen-title').bounding_box()
@@ -174,9 +194,18 @@ def main():
             page.set_viewport_size({"width": width, "height": height})
             page.wait_for_timeout(120)
             dimensions = page.evaluate(
-                "() => ({ scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth })"
+                """() => ({
+                  scrollWidth: document.documentElement.scrollWidth,
+                  innerWidth: window.innerWidth,
+                  scrollHeight: document.documentElement.scrollHeight,
+                  innerHeight: window.innerHeight,
+                  pageClient: document.querySelector('.result-page').clientHeight,
+                  pageScroll: document.querySelector('.result-page').scrollHeight
+                })"""
             )
             assert dimensions["scrollWidth"] <= dimensions["innerWidth"]
+            assert dimensions["scrollHeight"] <= dimensions["innerHeight"] + 1, dimensions
+            assert dimensions["pageScroll"] <= dimensions["pageClient"] + 1, dimensions
         page.screenshot(path=str(SCREENSHOTS / "03-result-430.png"), full_page=True)
 
         assert not console_errors, console_errors

@@ -60,8 +60,10 @@
   }
 
   function photoFilter(skinId, bake) {
-    var fire = ' saturate(' + (0.78 + bake / 300).toFixed(2) + ') brightness(' + (1.15 - bake / 850).toFixed(2) + ')';
-    if (skinId === 'snow') return 'saturate(.33) brightness(1.16)';
+    var heat = clamp((bake - 28) / 72, 0, 1);
+    // 火候统一以暖度、明暗和对比递进表现；低温偏浅金，高温才出现焦糖边。
+    var fire = ' sepia(' + (.08 + heat * .32).toFixed(2) + ') saturate(' + (.82 + heat * .56).toFixed(2) + ') brightness(' + (1.1 - heat * .13).toFixed(2) + ') contrast(' + (.94 + heat * .18).toFixed(2) + ')';
+    if (skinId === 'snow') return 'saturate(.33) brightness(1.16)' + fire;
     if (skinId === 'tea') return 'sepia(.22) hue-rotate(32deg) saturate(.86)' + fire;
     if (skinId === 'charcoal') return 'grayscale(.82) brightness(.67)' + fire;
     if (skinId === 'osmanthus') return 'sepia(.31) saturate(1.14)' + fire;
@@ -185,22 +187,51 @@
     ctx.restore();
   }
 
-  // A cut mooncake no longer receives two miniature, independently centred
-  // stamps. Instead, the selected mould is drawn once at full scale and only
-  // revealed through the two baked top surfaces. The split then continues the
-  // same mould across the gap and can never land on the exposed filling.
-  function drawCutSurfaceEmboss(ctx, cx, cy, radius, stampId, progress) {
-    var patternY = cy - radius * .63;
-    var patternRadius = radius * .9;
-    function topHalf(side) {
-      return function (context) {
-        context.beginPath();
-        context.ellipse(cx + side * radius * .45, cy - radius * .61, radius * .51, radius * .39, 0, 0, Math.PI * 2);
-        context.clip();
-      };
+  function drawFillingProfile(ctx, imageX, imageY, imageSize, points, filling, blendA, blendB, ratio, side) {
+    var bounds = { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity };
+    ctx.save();
+    ctx.beginPath();
+    points.forEach(function (point, index) {
+      var x = imageX + point[0] / 900 * imageSize;
+      var y = imageY + point[1] / 900 * imageSize;
+      bounds.left = Math.min(bounds.left, x); bounds.right = Math.max(bounds.right, x);
+      bounds.top = Math.min(bounds.top, y); bounds.bottom = Math.max(bounds.bottom, y);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.clip();
+
+    // Preserve the real filling photograph underneath. The selected flavours
+    // tint it through a broad, feathered gradient rather than rectangular masks.
+    var seam = .1;
+    var gradient = ctx.createLinearGradient(bounds.left, 0, bounds.right, 0);
+    gradient.addColorStop(0, blendA);
+    gradient.addColorStop(Math.max(.02, ratio - seam), blendA);
+    gradient.addColorStop(ratio, filling);
+    gradient.addColorStop(Math.min(.98, ratio + seam), blendB);
+    gradient.addColorStop(1, blendB);
+    ctx.globalCompositeOperation = 'color';
+    ctx.globalAlpha = .43;
+    ctx.fillStyle = gradient;
+    ctx.fillRect(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = .13;
+    ctx.fillStyle = filling;
+    ctx.fillRect(bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top);
+
+    // A few low-opacity grains keep the transition material rather than flat.
+    ctx.globalCompositeOperation = 'soft-light';
+    for (var grain = 0; grain < 24; grain += 1) {
+      var gx = bounds.left + seeded(grain + side * 29, 67) * (bounds.right - bounds.left);
+      var gy = bounds.top + seeded(grain + side * 43, 71) * (bounds.bottom - bounds.top);
+      ctx.globalAlpha = .05 + seeded(grain + side * 11, 73) * .08;
+      ctx.fillStyle = grain % 2 ? '#fff1c9' : '#4b2b1f';
+      ctx.beginPath();
+      ctx.ellipse(gx, gy, 1 + seeded(grain, 79) * 2.2, .7 + seeded(grain, 83) * 1.6, seeded(grain, 89) * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
     }
-    drawEmboss(ctx, cx, patternY, patternRadius, stampId, progress, topHalf(-1));
-    drawEmboss(ctx, cx, patternY, patternRadius, stampId, progress, topHalf(1));
+    ctx.restore();
   }
 
   function drawMoon(canvas, fullness) {
@@ -301,32 +332,8 @@
           [[520,275],[554,303],[618,375],[676,476],[702,681],[665,680],[602,578],[534,490],[504,413],[503,329]],
         ];
       faces.forEach(function (points, side) {
-          ctx.save();
-          ctx.beginPath();
-          points.forEach(function (point, index) {
-            var x = imageX + point[0] / 900 * imageSize;
-            var y = imageY + point[1] / 900 * imageSize;
-            if (index === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          });
-          ctx.closePath();
-          ctx.clip();
-          ctx.drawImage(cutImage, imageX, imageY, imageSize, imageSize);
-          ctx.globalCompositeOperation = 'multiply';
-          ctx.globalAlpha = .72;
-          ctx.fillStyle = filling;
-          ctx.fillRect(imageX, imageY, imageSize, imageSize);
-          ctx.globalAlpha = .24;
-          var faceLeft = imageX + (side ? 503 : 252) / 900 * imageSize;
-          var faceWidth = (side ? 199 : 222) / 900 * imageSize;
-          ctx.fillStyle = blendA;
-          ctx.fillRect(faceLeft, imageY, faceWidth * ratio, imageSize);
-          ctx.fillStyle = blendB;
-          ctx.fillRect(faceLeft + faceWidth * ratio, imageY, faceWidth * (1 - ratio), imageSize);
-          ctx.restore();
+        drawFillingProfile(ctx, imageX, imageY, imageSize, points, filling, blendA, blendB, ratio, side);
       });
-      var stampStrength = model && model.stampProgress != null ? model.stampProgress : 1;
-      drawCutSurfaceEmboss(ctx, cx, cy, radius, model && model.stampId, stampStrength);
       return;
     }
     function drawPhoto(originX) {
@@ -340,29 +347,17 @@
       ctx.beginPath();
       ctx.arc(originX, cy, radius * .99, 0, Math.PI * 2);
       ctx.clip();
+      var heat = clamp((bake - 28) / 72, 0, 1);
       var tint = ctx.createRadialGradient(originX - radius * .28, cy - radius * .32, radius * .04, originX, cy, radius * .96);
-      tint.addColorStop(0, filling);
+      tint.addColorStop(0, 'rgba(255,224,155,' + (.08 + heat * .16).toFixed(2) + ')');
       tint.addColorStop(.62, 'rgba(255,255,255,0)');
-      tint.addColorStop(1, crust);
-      ctx.globalAlpha = .28;
+      tint.addColorStop(1, heat > .72 ? '#6c3022' : '#bd7439');
+      ctx.globalAlpha = .16 + heat * .19;
       ctx.globalCompositeOperation = 'soft-light';
       ctx.fillStyle = tint;
       ctx.fillRect(originX - radius, cy - radius, radius * 2, radius * 2);
       ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = .2;
-      ctx.strokeStyle = blendA;
-      ctx.lineWidth = Math.max(2, radius * .035);
-      ctx.beginPath();
-      ctx.moveTo(originX - radius * .7, cy + radius * (.7 - ratio * .16));
-      ctx.quadraticCurveTo(originX, cy - radius * .1, originX + radius * .7, cy - radius * (.7 - ratio * .16));
-      ctx.stroke();
-      ctx.globalAlpha = .13;
-      ctx.strokeStyle = blendB;
-      ctx.beginPath();
-      ctx.moveTo(originX - radius * .72, cy - radius * (.7 - ratio * .12));
-      ctx.quadraticCurveTo(originX, cy + radius * .14, originX + radius * .72, cy + radius * (.7 - ratio * .12));
-      ctx.stroke();
-      ctx.globalAlpha = .26 + bake / 520;
+      ctx.globalAlpha = .22 + heat * .22;
       ctx.strokeStyle = lightCrust;
       ctx.lineWidth = Math.max(1.2, radius * .016);
       ctx.beginPath();
@@ -442,7 +437,7 @@
       if (hasPhoto) {
         drawPhoto(cx);
         drawSurfaceAccents(cx);
-        drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model && model.stampId, model && model.stampProgress);
+        if (model && model.stampProgress != null) drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model.stampId, model.stampProgress);
         return;
       }
       ctx.beginPath();
@@ -453,7 +448,7 @@
       ctx.shadowOffsetY = 8;
       ctx.fill();
       drawPattern(cx, 'full');
-      drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model && model.stampId, model && model.stampProgress);
+      if (model && model.stampProgress != null) drawEmboss(ctx, cx, cy - radius * .25, radius * .84, model.stampId, model.stampProgress);
       return;
     }
 

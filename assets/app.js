@@ -492,8 +492,9 @@
     if (!state.result) buildResult();
     var pages = getResultPages();
     state.resultPage = clamp(state.resultPage, 0, pages.length - 1);
-    var pageNames = ['结果', '切面', '手记', '配方', '同席'].concat(state.result.hiddenPages.map(function () { return '补记'; }));
-    var pageName = pageNames[state.resultPage] || '补记';
+    var hiddenNames = { indecision: '比例', overbake: '火候' };
+    var pageNames = ['结果', '切面', '手记', '配方', '同席'].concat(state.result.hiddenPages.map(function (type) { return hiddenNames[type] || '附页'; }));
+    var pageName = pageNames[state.resultPage] || '附页';
     var pageGuide = pageNames.map(function (name, index) { return '<span class="' + (index === state.resultPage ? 'is-current' : '') + '">' + name + '</span>'; }).join('');
     return '<section class="screen result-screen">' + stepMeta(pageName + ' / ' + String(state.resultPage + 1).padStart(2, '0'), 100) +
       '<div class="result-book">' + pages[state.resultPage] + '</div>' +
@@ -501,7 +502,7 @@
       '<nav class="book-nav" aria-label="结果册翻页"><button class="round-action" data-action="prev-result" aria-label="上一页" ' + (state.resultPage === 0 ? 'disabled' : '') + '>←</button>' +
       '<span class="book-count">' + String(state.resultPage + 1).padStart(2, '0') + '/' + String(pages.length).padStart(2, '0') + '</span>' +
       '<button class="round-action" data-action="next-result" aria-label="下一页" ' + (state.resultPage === pages.length - 1 ? 'disabled' : '') + '>→</button></nav>' +
-      (state.resultPage === pages.length - 1 ? '<button class="quiet-action" data-action="restart">再做一轮月亮</button>' : '') +
+      '<div class="result-restart-slot">' + (state.resultPage === pages.length - 1 ? '<button class="quiet-action" data-action="restart">再做一轮月亮</button>' : '') + '</div>' +
       '</section>';
   }
 

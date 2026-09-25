@@ -55,6 +55,26 @@ def main():
           }));
         }""")
         assert all(alpha_corners), "新增馅料必须保持透明背景"
+        ingredient_coverage = page.evaluate("""async () => {
+          const sources = ['lotus', 'sesame', 'osmanthus', 'custard', 'coffee', 'chestnut-v2', 'redbean-v2', 'matcha-v2'];
+          return Promise.all(sources.map(async (name) => {
+            const image = new Image(); image.src = `./assets/filling-${name}.webp`; await image.decode();
+            const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+            const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+            const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+            let left = canvas.width, right = -1, top = canvas.height, bottom = -1;
+            for (let y = 0; y < canvas.height; y += 1) for (let x = 0; x < canvas.width; x += 1) {
+              if (pixels[(y * canvas.width + x) * 4 + 3] > 12) { left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y); }
+            }
+            return { name, width: (right - left + 1) / canvas.width, height: (bottom - top + 1) / canvas.height };
+          }));
+        }""")
+        baseline = ingredient_coverage[:5]
+        baseline_extent = sum(max(item["width"], item["height"]) for item in baseline) / len(baseline)
+        baseline_area = sum(item["width"] * item["height"] for item in baseline) / len(baseline)
+        for item in ingredient_coverage[5:]:
+            assert abs(max(item["width"], item["height"]) - baseline_extent) < .09, ingredient_coverage
+            assert abs(item["width"] * item["height"] - baseline_area) < .10, ingredient_coverage
         page.locator('[data-action="confirm-filling"]').click()
         page.locator('[data-action="confirm-blend"]').click()
         page.locator('[data-action="dodge-surprise"]').click()
@@ -86,15 +106,24 @@ def main():
         assert press.evaluate("el => parseFloat(el.style.getPropertyValue('--press-progress'))") > 40
         page.screenshot(path=str(OUT / "adversarial-stamp-after.png"), full_page=True)
         visual_difference = page.evaluate("""() => {
-          const render = (skinId, fillingAsset, stampId, cut) => {
+          const render = (skinId, fillingAsset, stampId, cut, stampProgress) => {
             const c = document.createElement('canvas'); c.style.width='300px'; c.style.height='300px';
-            MoonVisuals.drawMooncake(c, {skinId, fillingAsset, fillingColor: fillingAsset==='matcha'?'#76865f':'#c99c62', stampId, bakeLevel:76, blendColors:['#783a45','#c9993d'], ratio:63}, cut, 300);
+            MoonVisuals.drawMooncake(c, {skinId, fillingAsset, fillingColor: fillingAsset==='matcha'?'#76865f':'#c99c62', stampId, stampProgress, bakeLevel:76, blendColors:['#783a45','#c9993d'], ratio:63}, cut, 300);
             return c.toDataURL();
           };
           return {
             skins: render('tea','lotus','osmanthus',0)!==render('charcoal','lotus','osmanthus',0),
             fillings: render('tea','lotus','osmanthus',1)!==render('tea','matcha','osmanthus',1),
-            stamps: render('tea','lotus','osmanthus',0)!==render('tea','lotus','rabbit',0),
+            stamps: render('tea','lotus','osmanthus',0,1)!==render('tea','lotus','rabbit',0,1),
+            finalStampIsPhotographic: render('tea','lotus','osmanthus',1)===render('tea','lotus','rabbit',1),
+            ratios: (() => {
+              const a = document.createElement('canvas'); a.style.width='300px'; a.style.height='300px';
+              const b = document.createElement('canvas'); b.style.width='300px'; b.style.height='300px';
+              const base = {skinId:'tea', fillingAsset:'lotus', fillingColor:'#c99c62', stampId:'osmanthus', bakeLevel:76, blendColors:['#783a45','#c9993d']};
+              MoonVisuals.drawMooncake(a, {...base, ratio:25}, 1, 300);
+              MoonVisuals.drawMooncake(b, {...base, ratio:75}, 1, 300);
+              return a.toDataURL() !== b.toDataURL();
+            })(),
             bake: render('tea','lotus','osmanthus',0)!==render('tea','lotus','osmanthus',1)
           };
         }""")

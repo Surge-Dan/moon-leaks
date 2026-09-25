@@ -196,6 +196,7 @@ def main():
             page.locator('[data-action="next-result"]').click()
             visited += 1
         assert visited >= 6, "ratio-adjustment hidden page was not generated"
+        assert page.locator('.result-guide span').all_inner_texts().count('补记') == 0
 
         page.locator('[data-action="restart"]').click()
         fast_to_reveal(page)
