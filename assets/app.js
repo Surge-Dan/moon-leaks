@@ -7,9 +7,10 @@
   var Content = root.MoonContent;
   var Engine = root.MoonEngine;
   var Visuals = root.MoonVisuals;
-  var STEPS = ['intro', 'skin', 'filling', 'blend', 'surprise', 'fate', 'knead', 'stamp', 'bake', 'reveal', 'result'];
+  var STEPS = ['intro', 'skin', 'filling', 'blend', 'surprise', 'fate', 'knead', 'stamp', 'bake', 'reveal', 'result', 'atlas', 'atlas-detail'];
   var PROGRESS_KEY = 'moon-leaks-progress-v1';
   var LAST_RESULT_KEY = 'moon-leaks-last-result';
+  var ATLAS_KEY = 'moon-leaks-atlas-v1';
 
   function safeRead(key) {
     try {
@@ -71,7 +72,7 @@
   }
 
   function hasValidProgress(saved) {
-    if (!saved || !hasValidSession(saved.session) || STEPS.indexOf(saved.step) === -1 || saved.step === 'intro' || saved.step === 'result') return false;
+    if (!saved || !hasValidSession(saved.session) || STEPS.indexOf(saved.step) === -1 || ['intro', 'result', 'atlas', 'atlas-detail'].indexOf(saved.step) !== -1) return false;
     var stepIndex = STEPS.indexOf(saved.step);
     if (typeof saved.fillingIndex !== 'number' || saved.fillingIndex < 0 || saved.fillingIndex >= Content.fillings.length) return false;
     if (typeof saved.blendIndex !== 'number' || saved.blendIndex < 0 || saved.blendIndex >= Content.blends.length) return false;
@@ -92,8 +93,8 @@
     return true;
   }
 
-  function readValidSavedResult() {
-    var saved = safeRead(LAST_RESULT_KEY);
+  function readValidSavedResult(candidate) {
+    var saved = arguments.length ? candidate : safeRead(LAST_RESULT_KEY);
     var result = saved && saved.result;
     var snapshot = saved && saved.snapshot;
     if (!result || !['code', 'name', 'line', 'essay', 'relation', 'cannotStand', 'tonight', 'number'].every(function (key) {
@@ -128,6 +129,18 @@
     return saved;
   }
 
+  function readAtlas() {
+    var saved = safeRead(ATLAS_KEY);
+    if (!Array.isArray(saved)) return [];
+    return saved.map(function (entry) { return readValidSavedResult(entry); }).filter(Boolean).slice(0, 24);
+  }
+
+  function writeAtlasEntry(saved) {
+    var entries = readAtlas().filter(function (entry) { return entry.id !== saved.id; });
+    entries.unshift(saved);
+    return safeWrite(ATLAS_KEY, entries.slice(0, 24));
+  }
+
   function createInitialState() {
     return {
       session: Engine.createSession('moon-' + Date.now().toString(36)), step: 'intro', stepStartedAt: performance.now(),
@@ -137,6 +150,7 @@
       stampId: null, stampHoldMs: 0, stampReleases: 0,
       bakeLevel: 28, bakeStartedAt: 0, bakeRaf: 0, cutProgress: 0,
       result: null, resultPage: 0, toastTimer: 0, savedResult: readValidSavedResult(),
+      atlasEntries: readAtlas(), atlasEntryIndex: 0, atlasOrigin: 'intro',
     };
   }
 
@@ -181,6 +195,8 @@
   }
 
   function previousStep() {
+    if (state.step === 'atlas-detail') return 'atlas';
+    if (state.step === 'atlas') return state.atlasOrigin === 'result' ? 'result' : 'intro';
     if (state.step === 'knead') return state.fate ? 'fate' : 'surprise';
     var index = STEPS.indexOf(state.step);
     return index > 0 && STEPS[index - 1] !== 'result' ? STEPS[index - 1] : null;
@@ -225,7 +241,7 @@
     state.stepStartedAt = performance.now();
     state.resultPage = nextStep === 'result' ? 0 : state.resultPage;
     if (nextStep === 'surprise') ensureSurpriseSet();
-    if (nextStep === 'result') safeRemove(PROGRESS_KEY);
+    if (nextStep === 'result' || nextStep === 'atlas' || nextStep === 'atlas-detail') safeRemove(PROGRESS_KEY);
     else safeWrite(PROGRESS_KEY, Object.assign({}, state, {
       stepStartedAt: 0, bakeStartedAt: 0, bakeRaf: 0, toastTimer: 0,
       result: null, savedResult: null, kneadPoints: state.kneadPoints.slice(-220),
@@ -239,7 +255,8 @@
       '<div class="atelier-intro"><div class="atelier-photo"><img src="./assets/atelier-hero.webp" alt="月光下的中秋烘焙案台"><span class="atelier-seal">月<br>下<br>案</span><span class="atelier-caption">桂影入窗，案上有香</span></div>' +
       '<div class="atelier-copy"><h1 class="screen-title">做一只月饼</h1><p class="screen-note">选饼皮、选馅料，调好一份月饼配方。</p></div></div>' +
       '<div class="atelier-actions"><button class="primary-action intro-action" data-action="start-intro">开始制作 <span aria-hidden="true">↗</span></button>' +
-      (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮</button>' : '') + '</div>' +
+      (state.savedResult && state.savedResult.result ? '<button class="quiet-action" data-action="open-last">翻开上一轮</button>' : '') +
+      (state.atlasEntries.length ? '<button class="quiet-action" data-action="open-atlas">月饼图鉴</button>' : '') + '</div>' +
       '</section>';
   }
 
@@ -459,7 +476,7 @@
   }
 
   function relationshipPage(result) {
-    return '<article class="result-page"><p class="eyebrow">切面04</p><h2 class="screen-title">和谁一起吃</h2>' +
+    return '<article class="result-page relationship-page"><p class="eyebrow">切面04</p><h2 class="screen-title">和谁一起吃</h2>' +
       '<div class="relationship-block"><h3>适合同席</h3><p>' + result.relation + '</p></div>' +
       '<div class="relationship-block"><h3>不太合口</h3><p>' + result.cannotStand + '</p></div>' +
       '<div class="relationship-block"><h3>今夜小笺</h3><p>' + result.tonight + '</p></div>' +
@@ -506,6 +523,38 @@
       '</section>';
   }
 
+  function renderAtlas() {
+    var entries = state.atlasEntries;
+    var cards = entries.map(function (entry, index) {
+      var result = entry.result;
+      return '<button class="atlas-card" data-action="open-atlas-record" data-index="' + index + '">' +
+        '<canvas class="atlas-canvas" data-role="atlas-canvas" data-index="' + index + '" aria-hidden="true"></canvas>' +
+        '<span class="atlas-card-copy"><b>' + escapeHtml(result.name) + '</b><small>第' + escapeHtml(result.number) + '轮 · ' + escapeHtml(result.skin.name) + ' · ' + escapeHtml(result.filling.name) + '</small><em>' + escapeHtml(result.stamp.name) + '</em></span></button>';
+    }).join('');
+    var content = cards || '<div class="atlas-empty"><p>还没有留存的月饼。</p><small>做完一只后点“留在本机”，它会出现在这里。</small></div>';
+    return '<section class="screen atlas-screen">' + stepMeta('月饼图鉴', 100) +
+      '<div class="atlas-heading"><p class="eyebrow">今夜留存</p><h1 class="screen-title">月饼图鉴</h1><p class="screen-note">已收好' + entries.length + '只，点开回看当时的配方。</p></div>' +
+      '<div class="atlas-grid" data-role="atlas-grid">' + content + '</div>' +
+      '<button class="primary-action" data-action="restart">再做一只</button></section>';
+  }
+
+  function renderAtlasDetail() {
+    var entry = state.atlasEntries[state.atlasEntryIndex];
+    if (!entry) return renderAtlas();
+    var result = entry.result;
+    var snapshot = entry.snapshot;
+    var rows = [
+      ['月皮', result.skin.name], ['主馅', result.filling.name],
+      ['夹心', result.blend.left + snapshot.ratio + '% · ' + result.blend.right + (100 - snapshot.ratio) + '%'],
+      ['月纹', result.stamp.name], ['火候', bakeLabel(snapshot.bakeLevel).split('·')[0]],
+    ].map(function (row) { return '<div class="atlas-recipe-row"><span>' + escapeHtml(row[0]) + '</span><strong>' + escapeHtml(row[1]) + '</strong></div>'; }).join('');
+    return '<section class="screen atlas-detail-screen">' + stepMeta('图鉴 / ' + String(state.atlasEntryIndex + 1).padStart(2, '0'), 100) +
+      '<article class="atlas-detail-card"><p class="eyebrow">第' + escapeHtml(result.number) + '轮月饼</p><h1 class="screen-title">' + escapeHtml(result.name) + '</h1>' +
+      '<canvas class="atlas-detail-canvas" data-role="atlas-detail-canvas"></canvas><p class="atlas-detail-line">' + escapeHtml(result.line) + '</p>' +
+      '<div class="atlas-recipe" data-role="atlas-recipe">' + rows + '</div></article>' +
+      '<button class="primary-action" data-action="restart">再做一只</button></section>';
+  }
+
   var lastAnimatedStep = null;
   function render() {
     if (STEPS.indexOf(state.step) === -1) state.step = 'intro';
@@ -521,6 +570,8 @@
       bake: renderBake,
       reveal: renderReveal,
       result: renderResult,
+      atlas: renderAtlas,
+      'atlas-detail': renderAtlasDetail,
     };
     app.innerHTML = views[state.step]();
     setupCurrentStep();
@@ -900,6 +951,16 @@
     if (anatomy) Visuals.drawMooncake(anatomy, state.result.model, 1);
   }
 
+  function setupAtlas() {
+    app.querySelectorAll('[data-role="atlas-canvas"]').forEach(function (canvas) {
+      var entry = state.atlasEntries[Number(canvas.dataset.index)];
+      if (entry) Visuals.drawMooncake(canvas, entry.result.model, 1, 92);
+    });
+    var detail = app.querySelector('[data-role="atlas-detail-canvas"]');
+    var selected = state.atlasEntries[state.atlasEntryIndex];
+    if (detail && selected) Visuals.drawMooncake(detail, selected.result.model, 1, 210);
+  }
+
   function setupCurrentStep() {
     var setups = {
       intro: setupIntro,
@@ -910,6 +971,8 @@
       bake: setupBake,
       reveal: setupReveal,
       result: setupResult,
+      atlas: setupAtlas,
+      'atlas-detail': setupAtlas,
     };
     if (setups[state.step]) setups[state.step]();
   }
@@ -1140,6 +1203,7 @@
 
   function saveResult() {
     var saved = {
+      id: state.session.id,
       savedAt: Date.now(),
       result: state.result,
       choices: state.session.choices,
@@ -1151,9 +1215,12 @@
         stampId: state.stampId, bakeLevel: state.bakeLevel,
       },
     };
-    if (safeWrite(LAST_RESULT_KEY, saved)) {
+    if (safeWrite(LAST_RESULT_KEY, saved) && writeAtlasEntry(saved)) {
       state.savedResult = saved;
-      showToast('这一轮月亮已经收进本地。');
+      state.atlasEntries = readAtlas();
+      state.atlasOrigin = 'result';
+      goStep('atlas');
+      showToast('这一轮月亮已经收进图鉴。');
     } else {
       showToast('当前环境没有保留本地记录，但结果仍在这一页。');
     }
@@ -1166,6 +1233,18 @@
     state.savedResult = saved;
     state.result = saved.result;
     goStep('result');
+  }
+
+  function openAtlas() {
+    state.atlasEntries = readAtlas();
+    state.atlasOrigin = state.step === 'result' ? 'result' : 'intro';
+    goStep('atlas');
+  }
+
+  function openAtlasRecord(index) {
+    if (!state.atlasEntries[index]) return;
+    state.atlasEntryIndex = index;
+    goStep('atlas-detail');
   }
 
   function openShare() {
@@ -1246,6 +1325,8 @@
       'save-result': saveResult,
       'open-share': openShare,
       'open-last': openLastResult,
+      'open-atlas': openAtlas,
+      'open-atlas-record': function () { openAtlasRecord(Number(control.dataset.index)); },
       'restart': restart,
       'back-step': backStep,
     };

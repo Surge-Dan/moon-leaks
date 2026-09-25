@@ -31,6 +31,7 @@ def main():
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 375, "height": 812})
+        page.set_default_timeout(5000)
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.add_init_script(
             """
@@ -191,6 +192,17 @@ def main():
         assert page.evaluate("window.__bridgeCalls.join(',')") == "write,save"
 
         page.locator('[data-action="close-share"]').click()
+        page.locator('[data-action="save-result"]').click()
+        page.wait_for_selector('[data-role="atlas-grid"]')
+        assert page.locator('[data-action="open-atlas-record"]').count() == 1
+        assert page.locator('[data-role="atlas-canvas"]').count() == 1
+        page.locator('[data-action="open-atlas-record"]').click()
+        page.wait_for_selector('[data-role="atlas-detail-canvas"]')
+        assert page.locator('[data-role="atlas-recipe"]').is_visible()
+        page.locator('[data-action="back-step"]').click()
+        assert page.locator('[data-role="atlas-grid"]').is_visible()
+        page.locator('[data-action="back-step"]').click()
+        page.wait_for_selector('.result-name')
         visited = 1
         while page.locator('[data-action="next-result"]').is_enabled():
             page.locator('[data-action="next-result"]').click()
@@ -199,6 +211,12 @@ def main():
         assert page.locator('.result-guide span').all_inner_texts().count('补记') == 0
 
         page.locator('[data-action="restart"]').click()
+        assert page.locator('[data-action="open-atlas"]').is_visible()
+        page.locator('[data-action="open-atlas"]').click()
+        page.wait_for_selector('[data-role="atlas-grid"]')
+        assert page.locator('[data-action="open-atlas-record"]').count() == 1
+        page.locator('[data-action="back-step"]').click()
+        assert page.locator('[data-action="start-intro"]').is_visible()
         fast_to_reveal(page)
         cake = page.locator("#reveal-canvas").bounding_box()
         assert cake

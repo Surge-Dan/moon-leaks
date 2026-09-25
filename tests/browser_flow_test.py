@@ -157,6 +157,10 @@ def main():
         page.screenshot(path=str(SCREENSHOTS / "10-share.png"), full_page=True)
         page.locator('[data-action="close-share"]').click()
         page.locator('[data-action="save-result"]').click()
+        page.wait_for_selector('[data-role="atlas-grid"]')
+        page.screenshot(path=str(SCREENSHOTS / "12-atlas.png"), full_page=True)
+        page.locator('[data-action="back-step"]').click()
+        page.wait_for_selector('.result-name')
 
         visited = 1
         while page.locator('[data-action="next-result"]').is_enabled():
@@ -181,6 +185,8 @@ def main():
                 assert title_box['y'] + title_box['height'] <= image_box['y'] + 2
                 assert image_box['y'] + image_box['height'] <= metrics_box['y'] + 2
                 page.screenshot(path=str(SCREENSHOTS / "11-anatomy.png"), full_page=True)
+            if visited in (3, 4, 5):
+                page.screenshot(path=str(SCREENSHOTS / f"result-page-{visited}.png"), full_page=True)
         assert visited >= 5
         assert page.get_by_text("再做一轮月亮").is_visible()
 
